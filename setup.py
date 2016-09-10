@@ -2,7 +2,10 @@
 
 import os
 
+from ez_setup import use_setuptools
 from setuptools import setup
+
+use_setuptools()
 
 
 def read(filename):
