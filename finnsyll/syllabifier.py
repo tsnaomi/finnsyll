@@ -8,6 +8,7 @@ except ImportError:
 
 import math
 import morfessor
+import pkg_resources
 import re
 
 from os.path import dirname, join
@@ -85,6 +86,7 @@ class FinnSeg(object):
 
     def __init__(self):
         DIR = dirname(__file__)
+        print pkg_resources.resource_listdir('data', '')
         morfessor_file = join(DIR, 'data/finnsyll-morfessor.bin')
         ngram_file = join(DIR, 'data/finnsyll-ngrams.pickle')
 
