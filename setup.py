@@ -13,7 +13,7 @@ def read(filename):
 
 setup(
     name='FinnSyll',
-    version='1.0.dev1',
+    version='1.0.dev3',
     description='Finnish syllabifier and compound segmenter',
     long_description=read('README.md'),
     url='https://github.com/tsnaomi/finnsyll',
@@ -29,5 +29,8 @@ setup(
     ],
     keywords='Finnish syllabifier compound segmenter',
     packages=['finnsyll', ],
+    package_data={
+        'finnsyll': ['finnsyll/data/*.bin', 'finnsyll/data/*.pickle'],
+    },
     install_requires=['morfessor', ],
 )
