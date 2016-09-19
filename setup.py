@@ -29,8 +29,9 @@ setup(
     ],
     keywords='Finnish syllabifier compound segmenter',
     packages=['finnsyll', ],
+    include_package_data=True,
     package_data={
-        'finnsyll': ['finnsyll/data/*.bin', 'finnsyll/data/*.pickle'],
+        'data': ['data/*.bin', 'data/*.pickle'],
     },
     install_requires=['morfessor', ],
 )

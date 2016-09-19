@@ -1,1 +1,2 @@
-recursive-include finnsyll/data *
+include data/*.bin
+include data/*.pickle
