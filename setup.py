@@ -1,19 +1,18 @@
 # coding=utf-8
 
-import os
-
 from ez_setup import use_setuptools
+from os.path import dirname, join
 from setuptools import setup
 
 use_setuptools()
 
 
 def read(filename):
-    return open(os.path.join(os.path.dirname(__file__), filename)).read()
+    return open(join(dirname(__file__), filename)).read()
 
 setup(
     name='FinnSyll',
-    version='1.0.dev6',
+    version='1.0.dev7',
     description='Finnish syllabifier and compound segmenter',
     long_description=read('README.md'),
     url='https://github.com/tsnaomi/finnsyll',
