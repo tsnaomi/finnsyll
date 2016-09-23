@@ -1,2 +1,1 @@
-include data/*.bin
-include data/*.pickle
+include finnsyll/data/*
