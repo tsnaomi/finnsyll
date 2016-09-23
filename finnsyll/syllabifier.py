@@ -8,7 +8,6 @@ except ImportError:
 
 import math
 import morfessor
-import pkg_resources
 import re
 
 from os.path import dirname, join
@@ -51,11 +50,12 @@ class FinnSyll:
         else:
             self._syllabify = self._syllabify_single
 
-    def __str__(self):
-        pass
-
     def __repr__(self):
-        pass
+        return '<FinnSyll: split_compounds=%s variation=%s track_rules=%s>' % (
+            str(self.split_compounds),
+            str(self.variation),
+            str(self.track_rules),
+            )
 
     def _normalize_then_split(self, word):
         return self.split(self._normalize(word))
@@ -95,11 +95,8 @@ class FinnSeg(object):
         self.constraints = CONSTRAINTS
         self.constraint_count = len(CONSTRAINTS)
 
-    def __str__(self):
-        pass
-
     def __repr__(self):
-        pass
+        return '<FinnSeg>'
 
     def segment(self, word):
         token = []
@@ -218,7 +215,3 @@ class FinnSeg(object):
             score -= math.log(self.total + len(self.vocab) + 1)
 
         return round(score, 4)
-
-
-if __name__ == '__main__':
-    pass
