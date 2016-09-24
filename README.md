@@ -57,7 +57,7 @@ Instantiating a ```FinnSyll``` object with ```variation=True``` (default) will a
 
 #### split_compounds
 
-When instantiating a ```FinnSyll``` object with ```split_compounds=True``` (default), the syllabifier will first attempt to split the input into constituent words before syllabifying it. This forces the syllabifier to insert a syllable boundary in between constituent words. The syllabifier will skip this step if ```split_compounds``` is set to ```False```.
+When instantiating a ```FinnSyll``` object with ```split_compounds=True``` (default), the syllabifier will first attempt to split the input into constituent words before syllabifying it. This forces the syllabifier to insert a syllable boundary in between identified constituent words. The syllabifier will skip this step if ```split_compounds``` is set to ```False```.
 
 *Compound splitting*:
 ```
