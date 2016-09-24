@@ -4,3 +4,4 @@ This change log is based on [Keep a Changelog](http://keepachangelog.com/) and t
 ### [Unreleased](#unreleased)
 #### Changed
 - Make ```FinnSyll(variation=False).syllabify()``` return the most *frequent* variant instead of a random variant.
+- Treat all input punctuation as delimiters in the syllabifier and compound splitter.
