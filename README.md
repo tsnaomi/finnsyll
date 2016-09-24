@@ -57,19 +57,19 @@ Instantiating a ```FinnSyll``` object with ```variation=True``` (default) will a
 
 #### split_compounds
 
-When instantiating a ```FinnSyll``` object with ```split_compounds=True``` (default), the syllabifier will first attempt to split the input into constituent words before syllabifying it. The syllabifier will skip this step if ```split_compounds``` is set to ```False```.
+When instantiating a ```FinnSyll``` object with ```split_compounds=True``` (default), the syllabifier will first attempt to split the input into constituent words before syllabifying it. This forces the syllabifier to insert a syllable boundary in between constituent words. The syllabifier will skip this step if ```split_compounds``` is set to ```False```.
 
 *Compound splitting*:
 ```
 >>> f = FinnSyll(split_compounds=True) 
->>> f.syllabify('sosiaalidemokraattien')
-['so.si.aa.li.de.mo.kraat.ti.en']
+>>> f.syllabify('rahoituserien')  # rahoitus=erien
+['ra.hoi.tus.e.ri.en']
 ```
 
 *No compound splitting*:
 ```
 >>> f = FinnSyll(split_compounds=False) 
->>> f.syllabify('sosiaalidemokraattien')
-['so.si.aa.li.de.mok.raat.ti.en']  # incorrect
+>>> f.syllabify('rahoituserien')
+['ra.hoi.tu.se.ri.en']  # incorrect
 ```
   
