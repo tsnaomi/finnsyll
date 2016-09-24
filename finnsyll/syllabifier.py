@@ -1,14 +1,14 @@
 # coding=utf-8
 
+import math
+import morfessor
+import re
+
 try:
     import cpickle as pickle
 
 except ImportError:
     import pickle
-
-import math
-import morfessor
-import re
 
 from os.path import dirname, join
 
@@ -91,9 +91,11 @@ class FinnSeg(object):
 
         io = morfessor.MorfessorIO()
         self.model = io.read_binary_model_file(morfessor_file)
-        self.ngrams, self.vocab, self.total = pickle.load(open(ngram_file))
         self.constraints = CONSTRAINTS
         self.constraint_count = len(CONSTRAINTS)
+
+        with open(ngram_file, 'rb') as f:
+            self.ngrams, self.vocab, self.total = pickle.load(f)
 
     def __repr__(self):
         return '<FinnSeg>'
