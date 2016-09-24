@@ -33,7 +33,7 @@ To segment compounds:
 
 The syllabifier can be customized along two different parameters: variation and compound splitting.  
 
-####variation
+#### variation
 
 Instantiating a ```FinnSyll``` object with ```variation=True``` (default) will allow the syllabifier to return multiple syllabifications if variation is predicted. When ```variation=True```, the syllabifier will return a list. Setting ```variation``` to ```False``` will cause the syllabifier to return a string containing the first predicted syllabification. 
 
