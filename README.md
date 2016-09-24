@@ -31,7 +31,7 @@ To segment compounds:
 
 ### Optional arguments
 
-FinnSyll can be customized along two different parameters: variation and compound splitting.  
+The syllabifier can be customized along two different parameters: variation and compound splitting.  
 
 ####variation
 
