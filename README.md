@@ -20,7 +20,7 @@ First, instantiate a ```FinnSyll``` object.
 To syllabify:
 ```
 >>> f.syllabify('runoja')
-['ru.no.ja']
+['ru.no.ja']  # internal syllable boundaries are indicated with '.'
 ```
 
 To segment compounds:
