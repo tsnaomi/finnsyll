@@ -1,6 +1,7 @@
 ## FinnSyll
 
-FinnSyll is a Python library that provides a Finnish syllabifier and compound segmenter. 
+FinnSyll is a Python library that syllabifies words according to Finnish syllabification principles.
+It is also equipped with a Finnish compound splitter. 
 More details/docs to come.
 
 ### Installation
