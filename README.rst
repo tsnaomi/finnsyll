@@ -13,20 +13,17 @@ Installation
 Basic usage
 ===========
 
-First, instantiate a ``FinnSyll`` object.
-::
+First, instantiate a ``FinnSyll`` object. ::
 
         >>> from finnsyll import FinnSyll
         >>> f = FinnSyll()
 
-To syllabify:
-::
+To syllabify: ::
 
         >>> f.syllabify('runoja')
         ['ru.no.ja']  # internal syllable boundaries are indicated with '.'
 
-To segment compounds:
-::
+To segment compounds: ::
 
         >>> f.split('sosiaalidemokraattien')
         'sosiaali=demokraattien'  # internal word boundaries are indicated with '='
@@ -41,8 +38,7 @@ variation
 
 Instantiating a ``FinnSyll`` object with ``variation=True`` (default) will allow the syllabifier to return multiple syllabifications if variation is predicted. When ``variation=True``, the syllabifier will return a list. Setting ``variation`` to ``False`` will cause the syllabifier to return a string containing the first predicted syllabification. 
 
-*Variation*:
-::
+*Variation*: ::
 
         >>> f = FinnSyll(variation=True) 
         >>> f.syllabify('runoja')
@@ -50,8 +46,7 @@ Instantiating a ``FinnSyll`` object with ``variation=True`` (default) will allow
         >>> f.syllabify('vapaus')
         ['va.pa.us', 'va.paus']
 
-*No variation*:
-::
+*No variation*: ::
 
         >>> f = FinnSyll(variation=False)
         >>> f.syllabify('runoja')
@@ -64,15 +59,13 @@ split_compounds
 
 When instantiating a ``FinnSyll`` object with ``split_compounds=True`` (default), the syllabifier will first attempt to split the input into constituent words before syllabifying it. This forces the syllabifier to insert a syllable boundary in between identified constituent words. The syllabifier will skip this step if ``split_compounds`` is set to ``False``.
 
-*Compound splitting*:
-::
+*Compound splitting*: ::
 
         >>> f = FinnSyll(split_compounds=True) 
         >>> f.syllabify('rahoituserien')  # rahoitus=erien
         ['ra.hoi.tus.e.ri.en']
 
-*No compound splitting*:
-::
+*No compound splitting*: ::
 
         >>> f = FinnSyll(split_compounds=False) 
         >>> f.syllabify('rahoituserien')
