@@ -7,12 +7,12 @@ It is also equipped with a Finnish compound splitter.
 More details/docs to come.
 
 Installation
-------------
+============
 
 ``$ pip install FinnSyll``
 
 Basic usage
------------
+===========
 
 First, instantiate a ``FinnSyll`` object.
 ::
@@ -30,11 +30,12 @@ To segment compounds:
   'sosiaali=demokraattien'  # internal word boundaries are indicated with '='
 
 Optional arguments
-------------------
+==================
 
 The syllabifier can be customized along two different parameters: variation and compound splitting.  
 
-**variation**
+variation
+---------
 
 Instantiating a ``FinnSyll`` object with ``variation=True`` (default) will allow the syllabifier to return multiple syllabifications if variation is predicted. When ``variation=True``, the syllabifier will return a list. Setting ``variation`` to ``False`` will cause the syllabifier to return a string containing the first predicted syllabification. 
 
@@ -54,7 +55,8 @@ Instantiating a ``FinnSyll`` object with ``variation=True`` (default) will allow
   >>> f.syllabify('vapaus')
   'va.pa.us'
 
-**split_compounds**
+split_compounds
+---------------
 
 When instantiating a ``FinnSyll`` object with ``split_compounds=True`` (default), the syllabifier will first attempt to split the input into constituent words before syllabifying it. This forces the syllabifier to insert a syllable boundary in between identified constituent words. The syllabifier will skip this step if ``split_compounds`` is set to ``False``.
 
