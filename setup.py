@@ -14,7 +14,7 @@ setup(
     name='FinnSyll',
     version='1.0.0',
     description='Finnish syllabifier and compound segmenter',
-    long_description=read('README.md'),
+    long_description=read('README.rst'),
     url='https://github.com/tsnaomi/finnsyll',
     author='Naomi Tachikawa Shapiro',
     author_email='coder@tsnaomi.net',
