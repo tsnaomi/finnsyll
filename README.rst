@@ -1,4 +1,3 @@
-        
 FinnSyll
 ********
 
@@ -16,18 +15,18 @@ Basic usage
 
 First, instantiate a ``FinnSyll`` object.
 ::
-  >>> from finnsyll import FinnSyll
-  >>> f = FinnSyll()
+        >>> from finnsyll import FinnSyll
+        >>> f = FinnSyll()
 
 To syllabify:
 ::
-  >>> f.syllabify('runoja')
-  ['ru.no.ja']  # internal syllable boundaries are indicated with '.'
+        >>> f.syllabify('runoja')
+        ['ru.no.ja']  # internal syllable boundaries are indicated with '.'
 
 To segment compounds:
 ::
-  >>> f.split('sosiaalidemokraattien')
-  'sosiaali=demokraattien'  # internal word boundaries are indicated with '='
+        >>> f.split('sosiaalidemokraattien')
+        'sosiaali=demokraattien'  # internal word boundaries are indicated with '='
 
 Optional arguments
 ==================
@@ -41,19 +40,19 @@ Instantiating a ``FinnSyll`` object with ``variation=True`` (default) will allow
 
 *Variation*:
 ::
-  >>> f = FinnSyll(variation=True) 
-  >>> f.syllabify('runoja')
-  ['ru.no.ja']
-  >>> f.syllabify('vapaus')
-  ['va.pa.us', 'va.paus']
+        >>> f = FinnSyll(variation=True) 
+        >>> f.syllabify('runoja')
+        ['ru.no.ja']
+        >>> f.syllabify('vapaus')
+        ['va.pa.us', 'va.paus']
 
 *No variation*:
 ::
-  >>> f = FinnSyll(variation=False)
-  >>> f.syllabify('runoja')
-  'ru.no.ja'
-  >>> f.syllabify('vapaus')
-  'va.pa.us'
+        >>> f = FinnSyll(variation=False)
+        >>> f.syllabify('runoja')
+        'ru.no.ja'
+        >>> f.syllabify('vapaus')
+        'va.pa.us'
 
 split_compounds
 ---------------
@@ -62,12 +61,12 @@ When instantiating a ``FinnSyll`` object with ``split_compounds=True`` (default)
 
 *Compound splitting*:
 ::
-  >>> f = FinnSyll(split_compounds=True) 
-  >>> f.syllabify('rahoituserien')  # rahoitus=erien
-  ['ra.hoi.tus.e.ri.en']
+        >>> f = FinnSyll(split_compounds=True) 
+        >>> f.syllabify('rahoituserien')  # rahoitus=erien
+        ['ra.hoi.tus.e.ri.en']
 
 *No compound splitting*:
 ::
-  >>> f = FinnSyll(split_compounds=False) 
-  >>> f.syllabify('rahoituserien')
-  ['ra.hoi.tu.se.ri.en']  # incorrect  
+        >>> f = FinnSyll(split_compounds=False) 
+        >>> f.syllabify('rahoituserien')
+        ['ra.hoi.tu.se.ri.en']  # incorrect  
