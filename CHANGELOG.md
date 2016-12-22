@@ -12,6 +12,10 @@ This change log is based on [Keep a Changelog](http://keepachangelog.com/) and t
 #### Fix
 - Preserve umlauts and capitalization.
 
+## [1.0.2](#1.0.2) - 2016-12-22
+#### Fixed
+- Fix code block formatting to cooperate with PyPI.
+
 ## [1.0.1](#1.0.1) - 2016-12-22
 #### Added
 - Add umlaut testing.
