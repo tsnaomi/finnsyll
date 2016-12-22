@@ -2,6 +2,7 @@
 
 import math
 import morfessor
+import os
 import re
 
 try:
@@ -24,12 +25,14 @@ except (ImportError, ValueError):
     from itertools import izip_longest as izip, product
 
     from phonology import CONSTRAINTS, replace_umlauts
-    from v9 import syllabify
+    from v12 import syllabify
 
 
 class FinnSyll:
 
     def __init__(self, split_compounds=True, variation=True, track_rules=False):  # noqa
+        self.DEV = bool(os.environ.get('FINNSYLL_DEV'))
+
         self.split_compounds = split_compounds
         self.variation = variation
         self.track_rules = track_rules
@@ -37,7 +40,7 @@ class FinnSyll:
         self._split = FinnSeg().segment
 
         if split_compounds:
-            self.normalize = self.split
+            self.normalize = self._normalize_then_split
         else:
             self.normalize = self._normalize
 
@@ -50,6 +53,22 @@ class FinnSyll:
         else:
             self._syllabify = self._syllabify_single
 
+        # SYLLABIFY:
+        #   1. normalize
+        #       1a. lowercase-ize word
+        #       1b. replace_umlauts
+        #       1c. split compound
+        #   2. syllabify
+        #       2a. syllabify
+        #       2b. restore umlauts ?
+
+        # SPLIT:
+        #   1. normalize
+        #       1a. lowercase-ize word
+        #       1b. replace_umlauts
+        #   2. split compound
+        #   3. restore umlauts ?
+
     def __repr__(self):
         return '<FinnSyll: split_compounds=%s variation=%s track_rules=%s>' % (
             str(self.split_compounds),
@@ -57,14 +76,21 @@ class FinnSyll:
             str(self.track_rules),
             )
 
+    def is_compound(self, word):
+        return bool(re.search(r'(-| |=)', self.split(word)))
+
     def _normalize_then_split(self, word):
-        return self.split(self._normalize(word))
+        return self._split(self._normalize(word))
 
     def _normalize(self, word):
-        return replace_umlauts(word).lower()
+        return replace_umlauts(word.decode('utf-8').lower().encode('utf-8'))
+
+    # def _restore(self, word):  # necessary?
+    #     return replace_umlauts(word, put_back=True)
 
     def split(self, word):
-        return self._split(self._normalize(word))
+        # return self._restore(self._normalize_then_split(word))
+        return self._normalize_then_split(word)
 
     def syllabify(self, word):
         return self._syllabify(self.normalize(word))
@@ -105,7 +131,7 @@ class FinnSeg(object):
 
         # split the word along any overt delimiters and iterate across the
         # components
-        for comp in re.split(r'(-| )', word.lower()):
+        for comp in re.split(r'(-| )', word):
 
             if len(comp) > 1:
 

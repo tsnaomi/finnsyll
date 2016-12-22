@@ -12,8 +12,11 @@ VOWELS = ['i', 'e', 'A', 'y', 'O', 'a', 'u', 'o']
 
 # Finnish diphthongs
 DIPHTHONGS = [
-    'ai', 'ei', 'oi', 'Ai', 'Oi', 'au', 'eu', 'ou', 'ey', 'Ay',
-    'Oy', 'ui', 'yi', 'iu', 'iy', 'ie', 'uo', 'yO', 'oy']
+    'ai', 'ei', 'oi', 'Ai', 'Oi', 'ui', 'yi',  # i-final diphthongs
+    'au', 'eu', 'ou', 'iu', 'ey', 'Ay', 'Oy', 'iy',  # u/y-final diphthongs
+    'ie', 'uo', 'yO',  # TAIL diphthongs
+    'ay', 'oy', 'uy',  # loanword diphthongs
+    ]
 
 
 # Finnish consonants
@@ -153,13 +156,55 @@ CONSTRAINTS = [
     ]
 
 
+# Foreign word detection ------------------------------------------------------
+
+phonemic_inventory = [
+    u'i', u'e', u'A', u'y', u'O', u'a', u'u', u'o',  u' ', u'-', '=',
+    u'd', u'h', u'j', u'k', u'l', u'm', u'n', u'p', u'r', u's', u't', u'v']
+
+
+def has_foreign_characters(word):
+    # Finnish allows /d/ only word-medially
+    if word.startswith('d'):
+        return True
+
+    foreign_chars = set([c for c in word if c not in phonemic_inventory])
+
+    # the letter 'g' indicates a foreign word unless it is preceded by an 'n',
+    # in which case, their collective underlying form is /ŋ/, which does appear
+    # in the Finnish phonemic inventory
+    if set('g') == foreign_chars:
+        g = word.index('g')
+
+        if not g or word[g - 1] != 'n':
+            return True
+
+        g = word.rindex('g')
+        return not g or word[g - 1] != 'n'
+
+    return bool(foreign_chars)
+
+
+def violates_constraint(word):
+    for constituent in re.split(r'-| |=', word):
+        for costraint in [min_word, sonseq, word_final, harmonic]:
+            if not costraint(constituent):
+                return True
+
+    return False
+
+
+def is_foreign(word):
+    return has_foreign_characters(word) or violates_constraint(word)
+
+
 # Normalization functions -----------------------------------------------------
 
 def replace_umlauts(word, put_back=False):  # use translate()
     '''If put_back is True, put in umlauts; else, take them out!'''
     if put_back:
-        word = word.replace('A', 'ä').replace('A', '\xc3\xa4')
-        word = word.replace('O', 'ö').replace('O', '\xc3\xb6')
+        word = word.replace('A', 'ä')
+        word = word.replace('O', 'ö')
 
     else:
         word = word.replace('ä', 'A').replace('\xc3\xa4', 'A')
