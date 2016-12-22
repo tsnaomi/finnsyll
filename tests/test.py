@@ -17,7 +17,7 @@ except (ImportError, ValueError):
 
 # CIN = Correctly incorrect
 
-class TestSyllabifier(unittest.TestCase):
+class TestSyllabifierArguments(unittest.TestCase):
 
     def test_full_functionality(self):
         F = FinnSyll(split_compounds=True, variation=True, track_rules=True)
@@ -33,17 +33,17 @@ class TestSyllabifier(unittest.TestCase):
         self.assertEqual(test, expected)
 
         # complex, no variation
-        expected = [('kuu.kaut.ta', 'T0 | T1')]
+        expected = [('kuu.kaut.ta', 'T0 = T1')]
         test = F.syllabify('kuukautta')  # kuu=kautta
         self.assertEqual(test, expected)
 
         # complex, no variation
-        expected = [('en.si-il.ta', 'T1 | T1')]
+        expected = [('en.si-il.ta', 'T1 = T1')]
         test = F.syllabify('ensi-ilta')
         self.assertEqual(test, expected)
 
         # complex, variation
-        expected = [('ho.vi.oi.ke.us', 'T1 | T1 T4'), ('ho.vi.oi.keus', 'T1 | T1')]  # noqa
+        expected = [('ho.vi.oi.ke.us', 'T1 = T1 T4'), ('ho.vi.oi.keus', 'T1 = T1')]  # noqa
         test = F.syllabify('hovioikeus')  # hovi=oikeus
         self.assertEqual(test, expected)
 
@@ -61,12 +61,12 @@ class TestSyllabifier(unittest.TestCase):
         self.assertEqual(test, expected)
 
         # complex, no variation
-        expected = [('kuu.ka.ut.ta', 'T1 T4'), ('kuu.kaut.ta', 'T1')]  # CIN
-        test = F.syllabify('kuukautta')  # kuu=kautta
+        expected = [('ju.ko.lan.tu.pi.en', 'T1 T2')]
+        test = F.syllabify('jukolantupien')  # jukolan=tupien
         self.assertEqual(test, expected)
 
         # complex, variation
-        expected = [('ho.vi.oi.keus', 'T1 T5')]  # CIN
+        expected = [('ho.vi.oi.ke.us', 'T1 T2 T4'), ('ho.vi.oi.keus', 'T1 T2')]
         test = F.syllabify('hovioikeus')  # hovi=oikeus
         self.assertEqual(test, expected)
 
@@ -84,12 +84,12 @@ class TestSyllabifier(unittest.TestCase):
         self.assertEqual(test, expected)
 
         # complex, no variation
-        expected = ('kuu.kaut.ta', 'T0 | T1')
+        expected = ('kuu.kaut.ta', 'T0 = T1')
         test = F.syllabify('kuukautta')  # kuu=kautta
         self.assertEqual(test, expected)
 
         # complex, variation
-        expected = ('ho.vi.oi.ke.us', 'T1 | T1 T4')  # CIN
+        expected = ('ho.vi.oi.ke.us', 'T1 = T1 T4')  # CIN
         test = F.syllabify('hovioikeus')  # hovi=oikeus
         self.assertEqual(test, expected)
 
@@ -135,7 +135,7 @@ class TestSyllabifier(unittest.TestCase):
         self.assertEqual(test, expected)
 
         # complex, variation
-        expected = ('ho.vi.oi.keus', 'T1 T5')  # CIN
+        expected = ('ho.vi.oi.ke.us', 'T1 T2 T4')  # CIN
         test = F.syllabify('hovioikeus')  # hovi=oikeus
         self.assertEqual(test, expected)
 
@@ -153,12 +153,12 @@ class TestSyllabifier(unittest.TestCase):
         self.assertEqual(test, expected)
 
         # complex, no variation
-        expected = ['kuu.ka.ut.ta', 'kuu.kaut.ta']  # CIN
-        test = F.syllabify('kuukautta')  # kuu=kautta
+        expected = ['ju.ko.lan.tu.pi.en']
+        test = F.syllabify('jukolantupien')  # jukolan=tupien
         self.assertEqual(test, expected)
 
         # complex, variation
-        expected = ['ho.vi.oi.keus']  # CIN
+        expected = ['ho.vi.oi.ke.us', 'ho.vi.oi.keus']
         test = F.syllabify('hovioikeus')  # hovi=oikeus
         self.assertEqual(test, expected)
 
@@ -204,7 +204,7 @@ class TestSyllabifier(unittest.TestCase):
         self.assertEqual(test, expected)
 
         # complex, variation
-        expected = 'ho.vi.oi.keus'  # CIN
+        expected = 'ho.vi.oi.ke.us'  # CIN
         test = F.syllabify('hovioikeus')  # hovi=oikeus
         self.assertEqual(test, expected)
 
@@ -219,6 +219,17 @@ class TestSegmenter(unittest.TestCase):
         self.assertEqual(F.split('kuukautta'), 'kuu=kautta')
         self.assertEqual(F.split('linja-autoaseman'), 'linja-auto=aseman')
         self.assertEqual(F.split('loppuottelussa'), 'loppu=ottelussa')
+        self.assertEqual(F.split('muutostöitä'), 'muutos=töitä')
+
+    def test_is_compound(self):
+        F = FinnSyll()
+
+        self.assertFalse(F.is_compound('runoja'))
+        self.assertFalse(F.is_compound('oikeus'))
+        self.assertTrue(F.is_compound('kuukautta'))
+        self.assertTrue(F.is_compound('linja-autoaseman'))
+        self.assertTrue(F.is_compound('loppuottelussa'))
+        self.assertTrue(F.is_compound('muutostöitä'))
 
 
 class TestConstraints(unittest.TestCase):
@@ -346,18 +357,38 @@ class TestVariation(unittest.TestCase):
     def test_ranking(self):
         F = FinnSyll(split_compounds=True, variation=True, track_rules=False)
 
-        test = 'rakkauden'
-        expected = ('rak.kau.den', 'rak.ka.u.den')
-
         pairs = {
             'rakkauden':
-                ('rak.kau.den', 'rak.ka.u.den'),
+                ['rak.kau.den', 'rak.ka.u.den'],
             'laukausta':
-                ('lau.ka.us.ta', 'lau.kaus.ta'),
-
+                ['lau.ka.us.ta', 'lau.kaus.ta'],
         }
 
-        self.assertEqual(F.syllabify(test), expected)
+        for test, expected in pairs.iteritems():
+            self.assertEqual(F.syllabify(test), expected)
 
-        for test, expected in pairs:
-            self.assertEqual(min_word(test), expected)
+
+class TestUmlauts(unittest.TestCase):
+
+    def test_umlaut_preservation(self):
+        F = FinnSyll(split_compounds=False, variation=False, track_rules=False)
+
+        # simplex, no variation
+        expected = 'pi.tää'
+        test = F.syllabify('pitää')
+        self.assertEqual(test, expected)
+
+        # simplex, variation
+        expected = 'yh.te.yt.tä'
+        test = F.syllabify('yhteyttä')
+        self.assertEqual(test, expected)
+
+        # complex, no variation
+        expected = 'ke.säil.lan'
+        test = F.syllabify('kesäillan')  # kesa=̈illan
+        self.assertEqual(test, expected)
+
+        # complex, variation
+        expected = 'oi.ke.u.den.käyn.nis.sä'
+        test = F.syllabify('oikeudenkäynnissä')  # oikeuden=käynnissä
+        self.assertEqual(test, expected)
