@@ -12,7 +12,7 @@ def read(filename):
 
 setup(
     name='FinnSyll',
-    version='1.0.0',
+    version='1.0.1',
     description='Finnish syllabifier and compound segmenter',
     long_description=read('README.rst'),
     url='https://github.com/tsnaomi/finnsyll',
