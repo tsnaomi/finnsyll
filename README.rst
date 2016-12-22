@@ -7,8 +7,9 @@ More details/docs to come.
 
 Installation
 ============
+::
 
-``$ pip install FinnSyll``
+        $ pip install FinnSyll
 
 Basic usage
 ===========
