@@ -339,3 +339,25 @@ class TestConstraints(unittest.TestCase):
 
         for test, expected in pairs:
             self.assertEqual(harmonic(test), expected)
+
+
+class TestVariation(unittest.TestCase):
+
+    def test_ranking(self):
+        F = FinnSyll(split_compounds=True, variation=True, track_rules=False)
+
+        test = 'rakkauden'
+        expected = ('rak.kau.den', 'rak.ka.u.den')
+
+        pairs = {
+            'rakkauden':
+                ('rak.kau.den', 'rak.ka.u.den'),
+            'laukausta':
+                ('lau.ka.us.ta', 'lau.kaus.ta'),
+
+        }
+
+        self.assertEqual(F.syllabify(test), expected)
+
+        for test, expected in pairs:
+            self.assertEqual(min_word(test), expected)
