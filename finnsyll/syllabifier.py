@@ -32,42 +32,25 @@ class FinnSyll:
 
     def __init__(self, split_compounds=True, variation=True, track_rules=False):  # noqa
         self.DEV = bool(os.environ.get('FINNSYLL_DEV'))
-
+        self._split = FinnSeg().segment  # instantiate compound segmenter
         self.split_compounds = split_compounds
         self.variation = variation
         self.track_rules = track_rules
 
-        self._split = FinnSeg().segment
+        # if "split" is True, normalizing the syllabifier's input will include
+        # attempting to split the input into constituent words
+        self.normalize = self.split if split_compounds else self._normalize
 
-        if split_compounds:
-            self.normalize = self._normalize_then_split
-        else:
-            self.normalize = self._normalize
-
+        # determine whether the syllabifier will produce variation and/or track
+        # which rules have applied in a syllabification
         if variation and track_rules:
-            self._syllabify = self._syllabify_with_rules_and_variation
+            self._syllabify = self._syllabify_vary_track
         elif variation:
-            self._syllabify = self._syllabify_with_variation
+            self._syllabify = self._syllabify_vary
         elif track_rules:
-            self._syllabify = self._syllabify_with_rules
+            self._syllabify = self._syllabify_track
         else:
-            self._syllabify = self._syllabify_single
-
-        # SYLLABIFY:
-        #   1. normalize
-        #       1a. lowercase-ize word
-        #       1b. replace_umlauts
-        #       1c. split compound
-        #   2. syllabify
-        #       2a. syllabify
-        #       2b. restore umlauts ?
-
-        # SPLIT:
-        #   1. normalize
-        #       1a. lowercase-ize word
-        #       1b. replace_umlauts
-        #   2. split compound
-        #   3. restore umlauts ?
+            self._syllabify = self._syllabify
 
     def __repr__(self):
         return '<FinnSyll: split_compounds=%s variation=%s track_rules=%s>' % (
@@ -76,36 +59,44 @@ class FinnSyll:
             str(self.track_rules),
             )
 
-    def is_compound(self, word):
-        return bool(re.search(r'(-| |=)', self.split(word)))
+    # pre-process -------------------------------------------------------------
 
-    def _normalize_then_split(self, word):
-        return self._split(self._normalize(word))
-
-    def _normalize(self, word):
+    def _normalize(self, word):  # TODO
         return replace_umlauts(word.decode('utf-8').lower().encode('utf-8'))
 
-    # def _restore(self, word):  # necessary?
-    #     return replace_umlauts(word, put_back=True)
-
-    def split(self, word):
-        # return self._restore(self._normalize_then_split(word))
-        return self._normalize_then_split(word)
+    # syllabify ---------------------------------------------------------------
 
     def syllabify(self, word):
+        '''Syllabify the provided word.'''
         return self._syllabify(self.normalize(word))
 
-    def _syllabify_with_rules_and_variation(self, word):
+    def _syllabify_vary_track(self, word):
+        # return all known variants and applied rules (as a list of tuples)
         return list(syllabify(word))
 
-    def _syllabify_with_variation(self, word):
-        return [s for s, r in list(syllabify(word))]
+    def _syllabify_vary(self, word):
+        # return all known variants, minus applied rules (as a list of strings)
+        return [s for s, _ in syllabify(word)]
 
-    def _syllabify_with_rules(self, word):
-        return list(syllabify(word))[0]  # TODO
+    def _syllabify_track(self, word):
+        # return the most preferred variant and its applied rules (as a tuple)
+        for syll, rules in syllabify(word):
+            return syll, rules
 
-    def _syllabify_single(self, word):
-        return list(syllabify(word))[0][0]  # TODO
+    def _syllabify(self, word):
+        # return the most preferred variant, minus applied rules (as a string)
+        for syll, _ in syllabify(word):
+            return syll
+
+    # split -------------------------------------------------------------------
+
+    def split(self, word):
+        '''Split the provided word into constituent words.'''
+        return self._split(self._normalize(word))
+
+    def is_compound(self, word):
+        '''Return True if the provided word is a compound; else, False.'''
+        return bool(re.search(r'(-| |=)', self.split(word)))
 
 
 class FinnSeg(object):

@@ -32,7 +32,7 @@ except (ImportError, ValueError):
 # remove previously inserted syllable boundaries (see T8).
 
 
-# Phonology.py edits ----------------------------------------------------------
+# Phonology.py TODO -----------------------------------------------------------
 
 # Finnish diphthongs
 DIPHTHONGS = [
@@ -421,5 +421,3 @@ if __name__ == '__main__':
 
     for word in words:
         print [w for w, _ in syllabify(word)], '\n'
-        # for syll, rules in syllabify(word):
-        #     print syll, rules
