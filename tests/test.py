@@ -5,6 +5,12 @@
 import unittest
 
 try:
+    import cpickle as pickle
+
+except ImportError:
+    import pickle
+
+try:
     # Python 3
     from ..finnsyll.phonology import min_word, word_final, sonseq, harmonic
     from ..finnsyll import FinnSyll
@@ -354,18 +360,43 @@ class TestConstraints(unittest.TestCase):
 
 class TestVariation(unittest.TestCase):
 
-    def test_ranking(self):
+    def test_variant_ranking(self):
         F = FinnSyll(split_compounds=True, variation=True, track_rules=False)
+        errors = 0
 
-        pairs = {
-            'rakkauden':
-                ['rak.kau.den', 'rak.ka.u.den'],
-            'laukausta':
-                ['lau.ka.us.ta', 'lau.kaus.ta'],
-        }
+        with open('tests/ranked_sylls.pickle', 'r+') as f:
+            pairs = pickle.load(f)
+
+        pairs['rakkauden'] = [u'rak.kau.den', u'rak.ka.u.den']
+        pairs['laukausta'] = [u'lau.ka.us.ta', u'lau.kaus.ta']
+        pairs['avautuu'] = [u'a.vau.tuu', u'a.va.u.tuu']
+        pairs['rakkaus'] = [u'rak.ka.us', u'rak.kaus']
+        pairs['valkeus'] = [u'val.ke.us', u'val.keus']
+        pairs['kaikkeuden'] = [u'kaik.keu.den', u'kaik.ke.u.den']
+        pairs['nopeuteni'] = [u'no.peu.te.ni', u'no.pe.u.te.ni']
 
         for test, expected in pairs.iteritems():
-            self.assertEqual(F.syllabify(test), expected)
+            test = F.syllabify(test.encode('utf-8'))
+            test = [s.decode('utf-8') for s in test]
+
+            try:
+                self.assertEqual(test, expected)
+
+            except AssertionError as e:
+                errors += 1
+                message = ''
+
+                for line in e.message.split('\n'):
+
+                    if line.startswith('-'):
+                        message += line + '\n'
+                    elif line.startswith('+'):
+                        message += line
+
+                print message + '\n'
+
+        if errors:
+            raise AssertionError(errors)
 
 
 class TestUmlauts(unittest.TestCase):

@@ -13,7 +13,7 @@ try:
         # is_diphthong,
         is_long,
         is_sonorant,
-        # is_vowel,
+        is_vowel,
         replace_umlauts,
         )
 
@@ -24,7 +24,7 @@ except (ImportError, ValueError):
         # is_diphthong,
         is_long,
         is_sonorant,
-        # is_vowel,
+        is_vowel,
         replace_umlauts,
         )
 
@@ -52,31 +52,32 @@ def is_diphthong(chars):
 def syllabify(word):
     '''Syllabify the given word, whether simplex or complex.'''
     compound = bool(re.search(r'(-| |=)', word))
-    syllabify = _syllabify_compound if compound else _syllabify_simplex
+    syllabify = _syllabify_complex if compound else _syllabify_simplex
     syllabifications = list(syllabify(word))
 
-    for word, rules in rank(syllabifications):
-        # post-process
-        word = str(replace_umlauts(word, put_back=True))
-        rules = rules[1:]
+    # if variation, order variants from most preferred to least preferred
+    if len(syllabifications) > 1:
+        syllabifications = rank(syllabifications)
 
-        yield word, rules
+    for word, rules in syllabifications:
+        yield _post_process(word, rules)
 
 
-def _syllabify_compound(word):
+def _syllabify_complex(word):
     syllabifications = []
 
     # split the word along any delimiters (a hyphen, space, or equal sign) and
     # syllabify the individual parts separately
     for w in re.split(r'(-| |=)', word):
-        sylls = [(w, ' ='), ] if w in '- =' else list(_syllabify_simplex(w))
+        sylls = [(w, ' ='), ] if w in '- =' else _syllabify_simplex(w)
         syllabifications.append(sylls)
 
-    WORDS = [w for w in product(*syllabifications)]
+    for x in (w for w in product(*syllabifications)):
+        word, rules = '', ''
 
-    for WORD in WORDS:
-        word = ''.join([w for w, r in WORD]).replace('=', '.')
-        rules = ''.join([r for w, r in WORD])
+        for w, r in x:
+            word += w
+            rules += r
 
         yield word, rules
 
@@ -86,14 +87,18 @@ def _syllabify_simplex(word):
     word, rules = T2(word, rules)
     word, rules = T8(word, rules)
 
-    # T4 produces variation
-    syllabifications = list(T4(word, rules))
-
-    for word, rules in syllabifications:
+    for word, rules in T4(word, rules):  # T4 produces variation
         word, rules = T6(word, rules)
         word, rules = T11(word, rules)
 
         yield word, rules or ' T0'  # T0 means no rules have applied
+
+
+def _post_process(word, rules):
+    word = str(replace_umlauts(word, put_back=True)).replace('=', '.')
+    rules = rules[1:]
+
+    return word, rules
 
 
 # T1 --------------------------------------------------------------------------
@@ -103,8 +108,8 @@ def T1(word, T1E=True):  # TODO
     # split consonants and vowels: 'balloon' -> ['b', 'a', 'll', 'oo', 'n']
     WORD = [w for w in re.split('([ieAyOauo]+)', word) if w]
 
-    # these are to keep track of which sub-rules are applying
-    A, B, C, D, E, F, G = '', '', '', '', '', '', ''
+    # keep track of which sub-rules are applying
+    sub_rules = set()
 
     # a count divisible by 2 indicates an even syllable
     count = 1
@@ -116,7 +121,7 @@ def T1(word, T1E=True):  # TODO
         # forms the onset of the first syllable:
         # CCV > #CCV
         if i == 0 and is_consonant(v[0]):
-            B = 'b'
+            sub_rules.add('b')
 
         elif is_consonant(v[0]):
             count += 1
@@ -129,7 +134,7 @@ def T1(word, T1E=True):  # TODO
             # forms the coda of the final syllable:
             # VCC# > VCC#
             if i + 1 == len(WORD):
-                C = 'c'
+                sub_rules.add('c')
 
             # T1D
             # If there is a bare "Finnish" consonant cluster word-medially and
@@ -139,7 +144,7 @@ def T1(word, T1E=True):  # TODO
             # the current syllable (this is the /kr/ rule):
             # 'VCCV > 'VC.CV,  VCCV > V.CCV
             elif is_cluster(v):
-                D = 'd'
+                sub_rules.add('d')
                 WORD[i] = v[0] + '.' + v[1:] if unstressed else '.' + v
 
             elif is_cluster(v[1:]):
@@ -153,7 +158,7 @@ def T1(word, T1E=True):  # TODO
                 # the current syllable:
                 # 'VlCC > VlC.C
                 if T1E and is_sonorant(v[0]) and unstressed:
-                    E = 'e'
+                    sub_rules.add('e')
                     WORD[i] = v[:2] + '.' + v[2:]
 
                 # T1F
@@ -163,7 +168,7 @@ def T1(word, T1E=True):  # TODO
                 # current syllable:
                 # VCkr > VC.kr
                 else:
-                    F = 'f'
+                    sub_rules.add('f')
                     WORD[i] = v[0] + '.' + v[1:]
 
             # T1A
@@ -171,11 +176,10 @@ def T1(word, T1E=True):  # TODO
             # VCV > V.CV, CCV > C.CV
             else:
                 WORD[i] = v[:-1] + '.' + v[-1]
-                A = 'a'
+                sub_rules.add('a')
 
     WORD = ''.join(WORD)
-    # RULE = ' T1' + A + B + C + D + E + F + G if word != WORD else ''
-    rules = ' T1' if word != WORD else ''
+    rules = '' if word == WORD else ' T1'   # + ''.join(sub_rules)
 
     return WORD, rules
 
@@ -347,69 +351,46 @@ def g3_precedence_sequences(word):
     return re.finditer(pattern, word)
 
 
-# Ranking (TODO) --------------------------------------------------------------
+# Ranking ---------------------------------------------------------------------
+
 
 def wsp(word):
-    '''Return the number of unstressed heavy syllables.'''
-    HEAVY = r'[ieaAoO]{1}[\.]*(u|y)[^ieaAoO]+(\.|$)'
-
-    # # if the word is not monosyllabic, lop off the final syllable, which is
-    # # extrametrical
-    # if '.' in word:
-    #     word = word[:word.rindex('.')]
-
-    # gather the indices of syllable boundaries
-    delimiters = [i for i, char in enumerate(word) if char == '.']
-
-    if len(delimiters) % 2 != 0:
-        delimiters.append(len(word))
-
+    '''Return the number of unstressed superheavy syllables.'''
+    violations = 0
     unstressed = []
 
-    # gather the indices of unstressed positions
-    for i, d in enumerate(delimiters):
-        if i % 2 == 0:
-            unstressed.extend(range(d + 1, delimiters[i + 1]))
+    for w in re.split(r'(=| |-)', word):
+        unstressed += w.split('.')[1::2]  # even syllables
 
-    # find the number of unstressed heavy syllables
-    heavies = re.finditer(HEAVY, word)
-    violations = sum(1 for m in heavies if m.start(0) in unstressed)
+        # include extrametrical odd syllables as potential WSP violations
+        if w.count('.') % 2 == 0:
+            unstressed += [w.rsplit('.', 1)[-1], ]
+
+    for syll in unstressed:
+        if is_consonant(syll[-1]) and re.search(r'[aAoOieuy]{2}', syll):
+            violations += 1
 
     return violations
 
 
 def pk_prom(word):
     '''Return the number of stressed light syllables.'''
-    LIGHT = r'[ieaAoO]{1}[\.]*(u|y)(\.|$)'
-
-    # # if the word is not monosyllabic, lop off the final syllable, which is
-    # # extrametrical
-    # if '.' in word:
-    #     word = word[:word.rindex('.')]
-
-    # gather the indices of syllable boundaries
-    delimiters = [0, ] + [i for i, char in enumerate(word) if char == '.']
-
-    if len(delimiters) % 2 != 0:
-        delimiters.append(len(word))
-
+    violations = 0
     stressed = []
 
-    # gather the indices of stressed positions
-    for i, d in enumerate(delimiters):
-        if i % 2 == 0:
-            stressed.extend(range(d + 1, delimiters[i + 1]))
+    for w in re.split(r'(=| |-)', word):
+        stressed += w.split('.')[2:-1:2]  # odd syllables, excl. word-initial
 
-    # find the number of stressed light syllables
-    heavies = re.finditer(LIGHT, word)
-    violations = sum(1 for m in heavies if m.start(1) in stressed)
+    for syll in stressed:
+        if is_vowel(syll[-1]):
+            violations += 1
 
     return violations
 
 
 def rank(syllabifications):
     '''Rank syllabifications.'''
-    syllabifications.sort(key=lambda s: wsp(s[0]) + pk_prom(s[0]))
+    syllabifications.sort(key=lambda s: wsp(s[0]) + pk_prom(s[0]) + len(s[0]))
 
     return syllabifications
 
@@ -418,10 +399,27 @@ def rank(syllabifications):
 
 if __name__ == '__main__':
     words = [
-        # 'tyOpaikat',
-        # 'donaueschingen',
+        'rakkauden',        # rak.kau.den, rak.ka.u.den
+        'laukausta',        # lau.ka.us.ta, lau.kaus.ta
+        'avautuu',          # a.vau.tuu, a.va.u.tuu
+        'rakkaus',          # rak.ka.us, rak.kaus
+        'valkeus',          # val.ke.us, val.keus
+        'kaikeuden',        # kaik.keu.den, kaik.ke.u.den
+        'linnoittautua',    # lin.noit.tau.tu.a, lin.noit.ta.u.tu.a
+        'maa=oikeuden',     # maa.oi.keu.den, maa.oi.ke.u.den
+        'pako=nopeuteni',   # pa.ko.no.peu.te.ni, pa.ko.no.pe.u.te.ni
+        'nopeuteni',        # no.peu.te.ni, no.pe.u.te.ni ????
+        'turvautumaan',     # tur.vau.tu.maan, tur.va.u.tu.maan
+        'korvautumassa',    # kor.vau.tu.mas.sa, kor.va.u.tu.mas.sa
+
+        # # val.mis.tau.tu.mi.ses.taan, val.mis.ta.u.tu.mi.ses.taan
+        'valmistautumisestaan',
+        'toteutumattomia',  # to.teu.tu.mat.to.mi.a, to.te.u.tu.mat.to.mi.a
+        'suhtautumista',    # suh.tau.tu.mis.ta, suh.ta.u.tu.mis.ta
+        'ajautumassa',      # a.jau.tu.mas.sa, a.ja.u.tu.mas.sa
         ]
 
     for word in words:
-        for syll, rules in syllabify(word):
-            print syll, rules
+        print [w for w, _ in syllabify(word)], '\n'
+        # for syll, rules in syllabify(word):
+        #     print syll, rules
