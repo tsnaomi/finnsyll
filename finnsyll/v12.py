@@ -4,47 +4,13 @@
 
 import re
 
+import phonology as phon
+
 from itertools import product
 
-try:
-    from .phonology import (
-        is_cluster,
-        is_consonant,
-        # is_diphthong,
-        is_long,
-        is_sonorant,
-        is_vowel,
-        replace_umlauts,
-        )
-
-except (ImportError, ValueError):
-    from phonology import (
-        is_cluster,
-        is_consonant,
-        # is_diphthong,
-        is_long,
-        is_sonorant,
-        is_vowel,
-        replace_umlauts,
-        )
 
 # This syllabifer departs from the earlier syllabifiers, allowing rules to
 # remove previously inserted syllable boundaries (see T8).
-
-
-# Phonology.py TODO -----------------------------------------------------------
-
-# Finnish diphthongs
-DIPHTHONGS = [
-    'ai', 'ei', 'oi', 'Ai', 'Oi', 'ui', 'yi',  # i-final diphthongs
-    'au', 'eu', 'ou', 'iu', 'ey', 'Ay', 'Oy', 'iy',  # u/y-final diphthongs
-    # 'ie', 'uo', 'yO',  # TAIL diphthongs
-    'ay', 'oy', 'uy',  # loanword diphthongs
-    ]
-
-
-def is_diphthong(chars):
-    return chars in DIPHTHONGS
 
 
 # Syllabifier -----------------------------------------------------------------
@@ -69,7 +35,7 @@ def _syllabify_complex(word):
     # split the word along any delimiters (a hyphen, space, or equal sign) and
     # syllabify the individual parts separately
     for w in re.split(r'(-| |=)', word):
-        sylls = [(w, ' ='), ] if w in '- =' else _syllabify_simplex(w)
+        sylls = [(w, ' ='), ] if w in u'- =' else _syllabify_simplex(w)
         syllabifications.append(sylls)
 
     for x in (w for w in product(*syllabifications)):
@@ -95,7 +61,8 @@ def _syllabify_simplex(word):
 
 
 def _post_process(word, rules):
-    word = str(replace_umlauts(word, put_back=True)).replace('=', '.')
+    # word = str(replace_umlauts(word, put_back=True)).replace('=', '.')
+    word = word.replace('=', '.')
     rules = rules[1:]
 
     return word, rules
@@ -103,10 +70,10 @@ def _post_process(word, rules):
 
 # T1 --------------------------------------------------------------------------
 
-def T1(word, T1E=True):  # TODO
+def T1(word):
     '''Insert a syllable boundary in front of every CV sequence.'''
     # split consonants and vowels: 'balloon' -> ['b', 'a', 'll', 'oo', 'n']
-    WORD = [w for w in re.split('([ieAyOauo]+)', word) if w]
+    WORD = filter(None, re.split(ur'([ieaouäöy]+)', word, flags=re.I | re.U))
 
     # keep track of which sub-rules are applying
     sub_rules = set()
@@ -120,10 +87,10 @@ def T1(word, T1E=True):  # TODO
         # If there is a consonant cluster word-initially, the entire cluster
         # forms the onset of the first syllable:
         # CCV > #CCV
-        if i == 0 and is_consonant(v[0]):
+        if i == 0 and phon.is_consonant(v[0]):
             sub_rules.add('b')
 
-        elif is_consonant(v[0]):
+        elif phon.is_consonant(v[0]):
             count += 1
 
             # True if the current syllable is unstressed, else False
@@ -143,11 +110,11 @@ def T1(word, T1E=True):  # TODO
             # heavy syllable); otherwise, the whole cluster forms the onset of
             # the current syllable (this is the /kr/ rule):
             # 'VCCV > 'VC.CV,  VCCV > V.CCV
-            elif is_cluster(v):
+            elif phon.is_cluster(v):
                 sub_rules.add('d')
                 WORD[i] = v[0] + '.' + v[1:] if unstressed else '.' + v
 
-            elif is_cluster(v[1:]):
+            elif phon.is_cluster(v[1:]):
 
                 # T1E (optional)
                 # If there is a word-medial "Finnish" consonant cluster that is
@@ -157,7 +124,7 @@ def T1(word, T1E=True):  # TODO
                 # syllable, and the remainder of the cluster forms the onset of
                 # the current syllable:
                 # 'VlCC > VlC.C
-                if T1E and is_sonorant(v[0]) and unstressed:
+                if phon.is_sonorant(v[0]) and unstressed:
                     sub_rules.add('e')
                     WORD[i] = v[:2] + '.' + v[2:]
 
@@ -179,7 +146,7 @@ def T1(word, T1E=True):  # TODO
                 sub_rules.add('a')
 
     WORD = ''.join(WORD)
-    rules = '' if word == WORD else ' T1'   # + ''.join(sub_rules)
+    rules = '' if word == WORD else ' T1'  # + ''.join(sub_rules)  # TODO: sort
 
     return WORD, rules
 
@@ -195,7 +162,7 @@ def T2(word, rules):
     for vv in vv_sequences(WORD):
         seq = vv.group(1)
 
-        if not is_diphthong(seq) and not is_long(seq):
+        if not phon.is_diphthong(seq) and not phon.is_long(seq):
             i = vv.start(1) + 1 + offset
             WORD = WORD[:i] + '.' + WORD[i:]
             offset += 1
@@ -216,9 +183,10 @@ def T2(word, rules):
 def T4(word, rules):
     '''Optionally split /u,y/-final diphthongs that do not take primary stress.
     E.g., [lau.ka.us], [va.ka.ut.taa].'''
-    pattern = r'([aAoOieuy]+[^aAoOieuy]+\.*[aAoOie]{1}(?:u|y)'
-    pattern += r'(?:\.*[^aAoOieuy]+|$))'
-    WORD = re.split(pattern, word)
+    WORD = re.split(
+        ur'([ieaouäöy]+[^ieaouäöy]+\.*[ieaoäö]{1}(?:u|y)(?:\.*[^ieaouäöy]+|$))',  # noqa
+        word, flags=re.I | re.U)
+
     PARTS = [[] for part in range(len(WORD))]
 
     for i, v in enumerate(WORD):
@@ -253,7 +221,7 @@ def T6(word, rules):
 
     for vvv in vvv_sequences(WORD):
         seq = vvv.group(2)
-        j = 2 if is_long(seq[:2]) else 1 if is_long(seq[1:]) else 0
+        j = 2 if phon.is_long(seq[:2]) else 1 if phon.is_long(seq[1:]) else 0
 
         if j:
             i = vvv.start(2) + j + offset
@@ -294,7 +262,7 @@ def T11(word, rules):
     offset = 0
 
     for vvv in g3_precedence_sequences(WORD):
-        i = vvv.start(1) + (1 if vvv.group(1)[-1] in 'uy' else 2) + offset
+        i = vvv.start(1) + (1 if vvv.group(1)[-1] in 'uyUY' else 2) + offset
         WORD = WORD[:i] + '.' + WORD[i:]
         offset += 1
 
@@ -308,25 +276,23 @@ def T11(word, rules):
 
 def vv_sequences(word):
     # this pattern searches for (overlapping) VV sequences
-    pattern = r'(?=([ieyuaAoO]{2}))'
-
-    return re.finditer(pattern, word)
+    return re.finditer(ur'(?=([ieaouäöy]{2}))', word, flags=re.I | re.U)
 
 
 def vvv_sequences(word):
     # this pattern searches for any VVV sequence that is not directly preceded
     # or followed by a vowel
-    pattern = r'(?=(^|\.)[^ieAyOauo]*([ieAyOauo]{3})[^ieAyOauo]*($|\.))'
-
-    return re.finditer(pattern, word)
+    return re.finditer(
+        ur'(?=(^|\.)[^ieaouäöy]*([ieaouäöy]{3})[^ieaouäöy]*($|\.))',
+        word, flags=re.I | re.U)
 
 
 def tail_diphthongs(word):
     # this pattern searches for any /ie/, /uo/, or /yö/ sequences in the first
     # syllable that are not directly preceded or followed by vowels
-    pattern = r'^[^aAoOeuyi]*(i\.e|u\.o|y\.O)(?:\.|[^aAoOeuyi]+|$)'
-
-    return re.match(pattern, word)
+    return re.match(
+        ur'^[^ieaouäöy]*(i\.e|u\.o|y\.ö)(?:\.|[^ieaouäöy]+|$)',
+        word, flags=re.I | re.U)
 
 
 def u_y_final_diphthongs(word):
@@ -336,19 +302,17 @@ def u_y_final_diphthongs(word):
     # specifying the relevant diphthongs versus r'([eiaAoO]{1}(u|y)) prevents
     # unnecessary splitting of Vy and Vu loanword sequences that violate vowel
     # harmony (e.g., 'Friday')
-    pattern = r'(?:[^aAoOieuy\.]+\.*)(au|eu|ou|iu|iy|ey|Ay|Oy)'
-    pattern += r'(?:(\.*[^aAoOieuy\.]+|$))'
-
-    return re.search(pattern, word)
+    return re.search(
+        ur'(?:[^ieaouäöy\.]+\.*)(au|eu|ou|iu|iy|ey|äy|öy)(?:(\.*[^ieaouäöy\.]+|$))',  # noqa
+        word, flags=re.I | re.U)
 
 
 def g3_precedence_sequences(word):
     # this pattern searches for any primary-stressed VVV sequence that contains
     # a /u,y/-final diphthong
-    pattern = r'^[^ieAyOauo]*([aAoOie]{1}(au|eu|ou|iu|iy|ey|Ay|Oy)'
-    pattern += r'|(au|eu|ou|iu|iy|ey|Ay|Oy)[aAoOie]{1})[^ieAyOauo]'
-
-    return re.finditer(pattern, word)
+    return re.finditer(
+        ur'^[^ieaouäöy]*([ieaoäö]{1}(au|eu|ou|iu|iy|ey|äy|öy)|(au|eu|ou|iu|iy|ey|Ay|Oy)[ieaoäö]{1})[^ieaouäöy]',  # noqa
+        word, flags=re.I | re.U)
 
 
 # Ranking ---------------------------------------------------------------------
@@ -367,7 +331,8 @@ def wsp(word):
             unstressed += [w.rsplit('.', 1)[-1], ]
 
     for syll in unstressed:
-        if is_consonant(syll[-1]) and re.search(r'[aAoOieuy]{2}', syll):
+        if phon.is_consonant(syll[-1]) and \
+                re.search(ur'[ieaouäöy]{2}', syll, flags=re.I | re.U):
             violations += 1
 
     return violations
@@ -382,7 +347,7 @@ def pk_prom(word):
         stressed += w.split('.')[2:-1:2]  # odd syllables, excl. word-initial
 
     for syll in stressed:
-        if is_vowel(syll[-1]):
+        if phon.is_vowel(syll[-1]):
             violations += 1
 
     return violations
@@ -399,25 +364,34 @@ def rank(syllabifications):
 
 if __name__ == '__main__':
     words = [
-        'rakkauden',        # rak.kau.den, rak.ka.u.den
-        'laukausta',        # lau.ka.us.ta, lau.kaus.ta
-        'avautuu',          # a.vau.tuu, a.va.u.tuu
-        'rakkaus',          # rak.ka.us, rak.kaus
-        'valkeus',          # val.ke.us, val.keus
-        'kaikeuden',        # kaik.keu.den, kaik.ke.u.den
-        'linnoittautua',    # lin.noit.tau.tu.a, lin.noit.ta.u.tu.a
-        'maa=oikeuden',     # maa.oi.keu.den, maa.oi.ke.u.den
-        'pako=nopeuteni',   # pa.ko.no.peu.te.ni, pa.ko.no.pe.u.te.ni
-        'nopeuteni',        # no.peu.te.ni, no.pe.u.te.ni ????
-        'turvautumaan',     # tur.vau.tu.maan, tur.va.u.tu.maan
-        'korvautumassa',    # kor.vau.tu.mas.sa, kor.va.u.tu.mas.sa
+        u'rakkauden',           # rak.kau.den, rak.ka.u.den
+        u'laukausta',           # lau.ka.us.ta, lau.kaus.ta
+        u'avautuu',             # a.vau.tuu, a.va.u.tuu
+        u'rakkaus',             # rak.ka.us, rak.kaus
+        u'valkeus',             # val.ke.us, val.keus
+        u'kaikeuden',           # kaik.keu.den, kaik.ke.u.den
+        u'linnoittautua',       # lin.noit.tau.tu.a, lin.noit.ta.u.tu.a
+        u'maa=oikeuden',        # maa.oi.keu.den, maa.oi.ke.u.den
+        u'pako=nopeuteni',      # pa.ko.no.peu.te.ni, pa.ko.no.pe.u.te.ni
+        u'nopeuteni',           # no.peu.te.ni, no.pe.u.te.ni ????
+        u'turvautumaan',        # tur.vau.tu.maan, tur.va.u.tu.maan
+        u'korvautumassa',       # kor.vau.tu.mas.sa, kor.va.u.tu.mas.sa
+        u'toteutumattomia',     # to.teu.tu.mat.to.mi.a, to.te.u.tu.mat.to.mi.a
+        u'suhtautumista',       # suh.tau.tu.mis.ta, suh.ta.u.tu.mis.ta
+        u'ajautumassa',         # a.jau.tu.mas.sa, a.ja.u.tu.mas.sa
 
-        # # val.mis.tau.tu.mi.ses.taan, val.mis.ta.u.tu.mi.ses.taan
-        'valmistautumisestaan',
-        'toteutumattomia',  # to.teu.tu.mat.to.mi.a, to.te.u.tu.mat.to.mi.a
-        'suhtautumista',    # suh.tau.tu.mis.ta, suh.ta.u.tu.mis.ta
-        'ajautumassa',      # a.jau.tu.mas.sa, a.ja.u.tu.mas.sa
+        u'ensimmäisen',         # en.sim.mäi.sen
+        u'käytännössä',         # käy.tän.nös.sä
+        u'öljyn',               # öl.jyn
+        u'kieltäytyi',          # kiel.täy.tyi, kiel.tä.y.tyi
+
+        u'nauumme',             # nau.um.me
+        u'leuun',               # leu.un
+        u'riuun',               # riu.un
+        u'ruoon',               # ruo.on
+        u'mosaiikki',           # mo.sa.iik.ki
         ]
 
     for word in words:
-        print [w for w, _ in syllabify(word)], '\n'
+        variants = '\t'.join(w for w, _ in syllabify(word.upper()))
+        print variants.lower().encode('utf-8')

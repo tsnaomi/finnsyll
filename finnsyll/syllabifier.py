@@ -17,14 +17,14 @@ try:
     # Python 3
     from itertools import zip_longest as izip, product
 
-    from .phonology import CONSTRAINTS, replace_umlauts
-    from .v9 import syllabify
+    from .phonology import CONSTRAINTS  # , replace_umlauts
+    from .v12 import syllabify
 
 except (ImportError, ValueError):
     # Python 2
     from itertools import izip_longest as izip, product
 
-    from phonology import CONSTRAINTS, replace_umlauts
+    from phonology import CONSTRAINTS  # , replace_umlauts
     from v12 import syllabify
 
 
@@ -61,13 +61,18 @@ class FinnSyll:
 
     # pre-process -------------------------------------------------------------
 
-    def _normalize(self, word):  # TODO
-        return replace_umlauts(word.decode('utf-8').lower().encode('utf-8'))
+    def _normalize(self, word):
+        # convert word to unicode
+        try:
+            return unicode(word, 'utf-8')
+
+        except TypeError:
+            return word
 
     # syllabify ---------------------------------------------------------------
 
     def syllabify(self, word):
-        '''Syllabify the provided word.'''
+        '''Syllabify 'word'.'''
         return self._syllabify(self.normalize(word))
 
     def _syllabify_vary_track(self, word):
@@ -91,11 +96,11 @@ class FinnSyll:
     # split -------------------------------------------------------------------
 
     def split(self, word):
-        '''Split the provided word into constituent words.'''
+        '''Split 'word' into any constituent words.'''
         return self._split(self._normalize(word))
 
     def is_compound(self, word):
-        '''Return True if the provided word is a compound; else, False.'''
+        '''Return True if 'word' is a compound; else, False.'''
         return bool(re.search(r'(-| |=)', self.split(word)))
 
 
@@ -127,6 +132,7 @@ class FinnSeg(object):
             if len(comp) > 1:
 
                 # use the language model to obtain the component's morphemes
+                comp = comp.lower().replace(u'ä', u'A').replace(u'ö', u'O')  # TODO
                 morphemes = self.model.viterbi_segment(comp)[0]
 
                 candidates = []
@@ -154,8 +160,14 @@ class FinnSeg(object):
 
             token.append(comp)
 
-        # return the segmentation in string form
-        return ''.join(token)
+        # return the segmentation in string form  # TODO
+        # return ''.join(token)
+
+        segmentation = ''.join(token)  # TODO
+        indices = [i for i, ch in enumerate(segmentation) if ch == '=']
+        for i in indices:
+            word = word[:i] + '=' + word[i:]
+        return word
 
     def _score_candidates(self, comp, candidates):
         count = len(candidates)
@@ -176,7 +188,7 @@ class FinnSeg(object):
             for i, const in enumerate(self.constraints):
                 for j, cand in enumerate(candidates):
                     for seg in cand[1].split('='):
-                        tableau[i][j] += 0 if const.test(seg) else 1
+                        tableau[i][j] += 0 if const.test(seg.replace( u'A', u'ä').replace(u'O', u'ö')) else 1  # TODO
 
                 # ignore violations when they are incurred by every candidate
                 min_violations = min(tableau[i])
@@ -224,10 +236,10 @@ class FinnSeg(object):
                 BC_count = self.ngrams.get(BC, 0)
 
                 if BC_count:
-                        B_count = self.ngrams[B]
-                        score += math.log(BC_count * 0.4)
-                        score -= math.log(B_count)
-                        continue
+                    B_count = self.ngrams[B]
+                    score += math.log(BC_count * 0.4)
+                    score -= math.log(B_count)
+                    continue
 
             C_count = self.ngrams.get(C, 1)  # Laplace smoothed unigram
             score += math.log(C_count * 0.4 * 0.4)
