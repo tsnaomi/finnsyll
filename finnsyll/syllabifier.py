@@ -17,14 +17,14 @@ try:
     # Python 3
     from itertools import zip_longest as izip, product
 
-    from .phonology import CONSTRAINTS  # , replace_umlauts
+    from .phonology import CONSTRAINTS
     from .v12 import syllabify
 
 except (ImportError, ValueError):
     # Python 2
     from itertools import izip_longest as izip, product
 
-    from phonology import CONSTRAINTS  # , replace_umlauts
+    from phonology import CONSTRAINTS
     from v12 import syllabify
 
 
@@ -50,7 +50,7 @@ class FinnSyll:
         elif track_rules:
             self._syllabify = self._syllabify_track
         else:
-            self._syllabify = self._syllabify
+            self._syllabify = self._syllabify_one
 
     def __repr__(self):
         return '<FinnSyll: split_compounds=%s variation=%s track_rules=%s>' % (
@@ -64,10 +64,12 @@ class FinnSyll:
     def _normalize(self, word):
         # convert word to unicode
         try:
+            # if bytes...
             return unicode(word, 'utf-8')
 
         except TypeError:
-            return word
+            # if unicode...
+            return unicode(word.encode('utf-8'), 'utf-8')
 
     # syllabify ---------------------------------------------------------------
 
@@ -75,12 +77,28 @@ class FinnSyll:
         '''Syllabify 'word'.'''
         return self._syllabify(self.normalize(word))
 
+    def syllabify_sent(self, sentence):
+        '''Syllabify 'sent', returning it as a single unicode string.
+
+        The syllabified string will include only the most preferred variant for
+        each word.
+        '''
+        tokens = []
+
+        for w in re.split(r'([\W]+)', sentence, flags=re.I | re.U):
+            if re.search(r'([\W]+)', w, flags=re.I | re.U):
+                tokens.append(w)
+            else:
+                tokens.append(self._syllabify_one(w))
+
+        return ''.join(tokens)
+
     def _syllabify_vary_track(self, word):
         # return all known variants and applied rules (as a list of tuples)
         return list(syllabify(word))
 
     def _syllabify_vary(self, word):
-        # return all known variants, minus applied rules (as a list of strings)
+        # return all known variants (as a list of strings), minus applied rules
         return [s for s, _ in syllabify(word)]
 
     def _syllabify_track(self, word):
@@ -88,8 +106,8 @@ class FinnSyll:
         for syll, rules in syllabify(word):
             return syll, rules
 
-    def _syllabify(self, word):
-        # return the most preferred variant, minus applied rules (as a string)
+    def _syllabify_one(self, word):
+        # return the most preferred variant (as a string), minus applied rules
         for syll, _ in syllabify(word):
             return syll
 
