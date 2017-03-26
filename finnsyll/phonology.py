@@ -15,8 +15,7 @@ PHONEMIC_INVENTORY = VOWELS + u'dhjklmnprstv -='
 DIPHTHONGS = [
     u'ai', u'ei', u'oi', u'äi', u'öi', u'ui', u'yi',  # i-final
     u'au', u'eu', u'ou', u'iu', u'ey', u'äy', u'öy', u'iy',  # u/y-final
-    # 'ie', 'uo', 'yO',  # tail
-    # u'uo',
+    # u'ie', u'uo', u'yö',  # tail
     u'ay', u'oy', u'uy',  # loanword
     ]
 

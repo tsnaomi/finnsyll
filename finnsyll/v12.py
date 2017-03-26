@@ -216,17 +216,30 @@ def T6(word, rules):
     '''If a VVV-sequence contains a long vowel, insert a syllable boundary
     between it and the third vowel. E.g. [kor.ke.aa], [yh.ti.öön], [ruu.an],
     [mää.yt.te].'''
-    WORD = word
     offset = 0
 
-    for vvv in vvv_sequences(WORD):
-        seq = vvv.group(2)
-        j = 2 if phon.is_long(seq[:2]) else 1 if phon.is_long(seq[1:]) else 0
+    try:
+        WORD, rest = tuple(word.split('.', 1))
 
-        if j:
-            i = vvv.start(2) + j + offset
-            WORD = WORD[:i] + '.' + WORD[i:]
+        for vvv in long_vowel_sequences(rest):
+            i = vvv.start(2)
+            vvv = vvv.group(2)
+            i += (2 if phon.is_long(vvv[:2]) else 1) + offset
+            rest = rest[:i] + '.' + rest[i:]
             offset += 1
+
+    except ValueError:
+        WORD = word
+
+    for vvv in long_vowel_sequences(WORD):
+        i = vvv.start(2) + 2
+        WORD = WORD[:i] + '.' + WORD[i:]
+
+    try:
+        WORD += '.' + rest
+
+    except UnboundLocalError:
+        pass
 
     rules += ' T6' if word != WORD else ''
 
@@ -261,7 +274,7 @@ def T11(word, rules):
     WORD = word
     offset = 0
 
-    for vvv in g3_precedence_sequences(WORD):
+    for vvv in precedence_sequences(WORD):
         i = vvv.start(1) + (1 if vvv.group(1)[-1] in 'uyUY' else 2) + offset
         WORD = WORD[:i] + '.' + WORD[i:]
         offset += 1
@@ -279,17 +292,16 @@ def vv_sequences(word):
     return re.finditer(ur'(?=([ieaouäöy]{2}))', word, flags=re.I | re.U)
 
 
-def vvv_sequences(word):
-    # this pattern searches for any VVV sequence that is not directly preceded
-    # or followed by a vowel
+def long_vowel_sequences(word):
+    # this pattern searches for any VVV sequence that contains a long vowel
     return re.finditer(
-        ur'(?=(^|\.)[^ieaouäöy]*([ieaouäöy]{3})[^ieaouäöy]*($|\.))',
+        ur'(^|[^ieaouäöy]+)([ieaouäöy]{1}(ii|ee|aa|oo|uu|ää|öö|yy)|(ii|ee|aa|oo|uu|ää|öö|yy)[ieaouäöy])([^ieaouäöy]+|$)',  # noqa
         word, flags=re.I | re.U)
 
 
 def tail_diphthongs(word):
-    # this pattern searches for any /ie/, /uo/, or /yö/ sequences in the first
-    # syllable that are not directly preceded or followed by vowels
+    # this pattern searches for any standalone /ie/, /uo/, or /yö/ sequence in
+    # the first syllable
     return re.match(
         ur'^[^ieaouäöy]*(i\.e|u\.o|y\.ö)(?:\.|[^ieaouäöy]+|$)',
         word, flags=re.I | re.U)
@@ -307,7 +319,7 @@ def u_y_final_diphthongs(word):
         word, flags=re.I | re.U)
 
 
-def g3_precedence_sequences(word):
+def precedence_sequences(word):
     # this pattern searches for any primary-stressed VVV sequence that contains
     # a /u,y/-final diphthong
     return re.finditer(
@@ -330,10 +342,18 @@ def wsp(word):
         if w.count('.') % 2 == 0:
             unstressed += [w.rsplit('.', 1)[-1], ]
 
+    # SHSP
     for syll in unstressed:
         if phon.is_consonant(syll[-1]) and \
                 re.search(ur'[ieaouäöy]{2}', syll, flags=re.I | re.U):
             violations += 1
+
+    # # WSP (CVV = heavy)
+    # for syll in unstressed:
+    #     if re.search(
+    #             ur'[ieaouäöy]{2}|[ieaouäöy]+[^ieaouäöy]+',
+    #             syll, flags=re.I | re.U):
+    #         violations += 1
 
     return violations
 
@@ -346,15 +366,35 @@ def pk_prom(word):
     for w in re.split(r'(=| |-)', word):
         stressed += w.split('.')[2:-1:2]  # odd syllables, excl. word-initial
 
+    # (CVV = light)
     for syll in stressed:
         if phon.is_vowel(syll[-1]):
             violations += 1
+
+    # # (CVV = heavy)
+    # for syll in stressed:
+    #     if re.search(
+    #             ur'^[^ieaouäöy]*[ieaouäöy]{1}$',  syll, flags=re.I | re.U):
+    #         violations += 1
 
     return violations
 
 
 def rank(syllabifications):
     '''Rank syllabifications.'''
+
+    # def key(s):
+    #     word = s[0]
+    #     w = wsp(word)
+    #     p = pk_prom(word)
+    #     n = word.count('.') + 1
+    #     t = w + p + n
+    #     print '%s\nwsp: %s\npk: %s\nnuc: %s\ntotal: %s' % (word, w, p, n, t)
+
+    #     return w + p + n
+
+    # syllabifications.sort(key=key)
+
     syllabifications.sort(key=lambda s: wsp(s[0]) + pk_prom(s[0]) + len(s[0]))
 
     return syllabifications
@@ -390,6 +430,7 @@ if __name__ == '__main__':
         u'riuun',               # riu.un
         u'ruoon',               # ruo.on
         u'mosaiikki',           # mo.sa.iik.ki
+        u'herooinen',           # he.ro.oi.nen
         ]
 
     for word in words:
