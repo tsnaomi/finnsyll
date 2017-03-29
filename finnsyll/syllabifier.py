@@ -150,11 +150,11 @@ class FinnSeg(object):
             if len(comp) > 1:
 
                 # use the language model to obtain the component's morphemes
-                comp = comp.lower().replace(u'ä', u'A').replace(u'ö', u'O')  # TODO
+                comp = comp.lower()
                 morphemes = self.model.viterbi_segment(comp)[0]
 
                 candidates = []
-                delimiter_sets = product(['#', 'X'], repeat=len(morphemes) - 1)
+                delimiter_sets = product(['#', '&'], repeat=len(morphemes) - 1)
 
                 # produce and score each candidate segmentation
                 for d in delimiter_sets:
@@ -178,22 +178,16 @@ class FinnSeg(object):
 
             token.append(comp)
 
-        # return the segmentation in string form  # TODO
-        # return ''.join(token)
-
-        segmentation = ''.join(token)  # TODO
-        indices = [i for i, ch in enumerate(segmentation) if ch == '=']
-        for i in indices:
-            word = word[:i] + '=' + word[i:]
-        return word
+        # return the segmentation in string form
+        return u''.join(token)
 
     def _score_candidates(self, comp, candidates):
         count = len(candidates)
 
-        # (['#', 'm', 'X', 'm', '#', 'm', '#'], 'mm=m')
+        # (['#', 'm', '&', 'm', '#', 'm', '#'], 'mm=m')
         for i, cand in enumerate(candidates):
             cand = ''.join(cand)
-            cand = cand.replace('#', '=').replace('X', '')
+            cand = cand.replace('#', '=').replace('&', '')
             candidates[i] = (['#', ] + candidates[i] + ['#', ], cand)
 
         if count > 1:
@@ -206,7 +200,7 @@ class FinnSeg(object):
             for i, const in enumerate(self.constraints):
                 for j, cand in enumerate(candidates):
                     for seg in cand[1].split('='):
-                        tableau[i][j] += 0 if const.test(seg.replace( u'A', u'ä').replace(u'O', u'ö')) else 1  # TODO
+                        tableau[i][j] += 0 if const.test(seg) else 1
 
                 # ignore violations when they are incurred by every candidate
                 min_violations = min(tableau[i])
