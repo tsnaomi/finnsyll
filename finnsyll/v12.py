@@ -335,7 +335,7 @@ def wsp(word):
     violations = 0
     unstressed = []
 
-    for w in re.split(r'(=| |-)', word):
+    for w in filter(None, re.split(r'=| |-', word)):
         unstressed += w.split('.')[1::2]  # even syllables
 
         # include extrametrical odd syllables as potential WSP violations
@@ -363,7 +363,7 @@ def pk_prom(word):
     violations = 0
     stressed = []
 
-    for w in re.split(r'(=| |-)', word):
+    for w in filter(None, re.split(r'=| |-', word)):
         stressed += w.split('.')[2:-1:2]  # odd syllables, excl. word-initial
 
     # (CVV = light)
