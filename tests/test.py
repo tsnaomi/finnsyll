@@ -253,10 +253,10 @@ class TestSyllabifierOutput(unittest.TestCase):
         if errors:
             raise AssertionError('\n\n' + '\n\n'.join(errors).encode('utf-8'))
 
-    def test_syllabify_sentence(self):
-        # ensure that the syllabififer can syllabify an entire sentence or text
-        # with FinnSyll.syllabify_sent()
-        F = FinnSyll(split_compounds=True, variation=True, track_rules=True)
+    def test_punctuated_input(self):
+        # ensure that the syllabififer can syllabify delimited and punctuated
+        # input
+        F = FinnSyll(split_compounds=True, variation=False, track_rules=False)
 
         lines = (
             u'Ei olko kaipuumme kuin haave naisentai sairaan näky,\n'
@@ -265,7 +265,9 @@ class TestSyllabifierOutput(unittest.TestCase):
             u'Nuo äänet on kuorona rinnassas.\n'
             u'ja villi on leimaus katseessas.--\n'
             u'peru päiviltä muinaisilta se lie\n'
-            u'kun käytiin katkera kostontie.'
+            u'kun käytiin katkera kostontie.\n\n'
+
+            u'hypo_lemma'  # hypothetical lemma
             )
 
         expected = (
@@ -274,11 +276,13 @@ class TestSyllabifierOutput(unittest.TestCase):
 
             u'Nuo ää.net on kuo.ro.na rin.nas.sas.\n'
             u'ja vil.li on lei.ma.us kat.sees.sas.--\n'
-            u'pe.ru päi.vil.tä mui.nai.sil.ta se lie\n'
-            u'kun käy.tiin kat.ke.ra kos.ton.ti.e.'
+            u'pe.ru päi.vil.tä mui.nais.il.ta se lie\n'
+            u'kun käy.tiin kat.ke.ra kos.ton.tie.\n\n'
+
+            u'hy.po_lem.ma'
             )
 
-        self.assertEqual(F.syllabify_sent(lines), expected)
+        self.assertEqual(F.syllabify(lines), expected)
 
     def test_is_vowel_consonant_capitalization(self):
         # ensure that is_vowel() and is_consonant() work for both upper and
@@ -308,6 +312,7 @@ class TestVariantOrdering(unittest.TestCase):
         errors = 0
 
         for i, expected in pairs.iteritems():
+
             try:
                 test = F.syllabify(unicode(i, 'utf-8').lower())
 
@@ -328,7 +333,7 @@ class TestVariantOrdering(unittest.TestCase):
                     elif line.startswith('+'):
                         message += line
 
-                print message + '\n'
+                print(message + '\n')
 
         if errors:
             raise AssertionError(errors)
@@ -347,12 +352,32 @@ class TestSegmenter(unittest.TestCase):
             'linja-autoaseman': u'linja-auto=aseman',
             'loppuottelussa': u'loppu=ottelussa',
             'muutostöitä': u'muutos=töitä',
+            'kesäillan': u'kesä=illan',
+            'äidinkielen': u'äidin=kielen',
+            'ääntenenemmistöllä': u'äänten=enemmistöllä',
             }
 
         error_helper(self, F.split, cases)
 
-    def test_is_compound(self):
-        # ensure that FinnSylll.is_compound() detects compounds
+    def test_punctuated_capitalized_input(self):
+        # ensure that FinnSyll.split() can split delimited, punctuated, and
+        # capitalized input
+        F = FinnSyll()
+
+        case = (
+            'runoja_oikeus8910kuukautta linja-AUTOASEMAN'
+            '....Loppuottelussa//muutostöitä1234kesäillan'
+            )
+
+        expected = (
+            u'runoja_oikeus8910kuu=kautta linja-AUTO=ASEMAN'
+            u'....Loppu=ottelussa//muutos=töitä1234kesä=illan'
+            )
+
+        self.assertEqual(F.split(case), expected)
+
+    def test_is_complex(self):
+        # ensure that FinnSylll.is_complex() detects compounds
         F = FinnSyll()
 
         cases = {
@@ -364,7 +389,7 @@ class TestSegmenter(unittest.TestCase):
             'muutostöitä': True,
             }
 
-        error_helper(self, F.is_compound, cases)
+        error_helper(self, F.is_complex, cases)
 
 
 class TestConstraints(unittest.TestCase):

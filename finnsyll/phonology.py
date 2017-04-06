@@ -83,7 +83,6 @@ def is_sonorant(ch):
 
 # Linguistic constraints ------------------------------------------------------
 
-
 def min_word(word):
     '''Return True if 'word' contains two or more vowels.
 

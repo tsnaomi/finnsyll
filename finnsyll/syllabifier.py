@@ -3,7 +3,6 @@
 import math
 import morfessor
 import os
-import re
 
 try:
     import cpickle as pickle
@@ -13,19 +12,20 @@ except ImportError:
 
 from os.path import dirname, join
 
+
 try:
     # Python 3
     from itertools import zip_longest as izip, product
 
     from .phonology import CONSTRAINTS
-    from .v12 import syllabify
+    from .v12 import nonalpha_split, syllabify
 
 except (ImportError, ValueError):
     # Python 2
     from itertools import izip_longest as izip, product
 
     from phonology import CONSTRAINTS
-    from v12 import syllabify
+    from v12 import nonalpha_split, syllabify
 
 
 class FinnSyll:
@@ -77,22 +77,6 @@ class FinnSyll:
         '''Syllabify 'word'.'''
         return self._syllabify(self.normalize(word))
 
-    def syllabify_sent(self, sentence):
-        '''Syllabify 'sent', returning it as a single unicode string.
-
-        The syllabified string will include only the most preferred variant for
-        each word.
-        '''
-        tokens = []
-
-        for w in re.split(r'([\W]+)', sentence, flags=re.I | re.U):
-            if re.search(r'([\W]+)', w, flags=re.I | re.U):
-                tokens.append(w)
-            else:
-                tokens.append(self._syllabify_one(w))
-
-        return ''.join(tokens)
-
     def _syllabify_vary_track(self, word):
         # return all known variants and applied rules (as a list of tuples)
         return list(syllabify(word))
@@ -117,9 +101,9 @@ class FinnSyll:
         '''Split 'word' into any constituent words.'''
         return self._split(self._normalize(word))
 
-    def is_compound(self, word):
-        '''Return True if 'word' is a compound; else, False.'''
-        return bool(re.search(r'(-| |=)', self.split(word)))
+    def is_complex(self, word):
+        '''Return True if 'word' is composed of multiple words; else, False.'''
+        return not self.split(word).isalpha()
 
 
 class FinnSeg(object):
@@ -145,13 +129,25 @@ class FinnSeg(object):
 
         # split the word along any overt delimiters and iterate across the
         # components
-        for comp in re.split(r'(-| )', word):
+        for comp in nonalpha_split(word):
 
-            if len(comp) > 1:
+            if len(comp) > 1 and comp[0].isalpha():
 
                 # use the language model to obtain the component's morphemes
-                comp = comp.lower()
-                morphemes = self.model.viterbi_segment(comp)[0]
+                # comp = comp.lower()
+                morphemes = self.model.viterbi_segment(comp.lower())[0]
+
+                # preserve capitalization of comp, since viterbi_segment() is
+                # case-sensitive... WELP
+                if comp != comp.lower():
+                    indices = [0, ]
+                    offset = 0
+                    for m in morphemes[:-1]:
+                        m = len(m) + offset
+                        indices.append(m)
+                        offset = m
+                    indices = zip(indices, indices[1:] + [None, ])
+                    morphemes = [comp[i:j] for i, j in indices]
 
                 candidates = []
                 delimiter_sets = product(['#', '&'], repeat=len(morphemes) - 1)
@@ -227,13 +223,13 @@ class FinnSeg(object):
         score = 0
 
         for i, morpheme in enumerate(candidate):
-            C = morpheme
+            C = morpheme.lower()
 
             if i > 0:
-                B = candidate[i-1]
+                B = candidate[i-1].lower()
 
                 if i > 1:
-                    A = candidate[i-2]
+                    A = candidate[i-2].lower()
                     ABC = A + ' ' + B + ' ' + C
                     ABC_count = self.ngrams.get(ABC, 0)
 

@@ -3,6 +3,7 @@
 # First Python 3-compatible version.
 
 import re
+# import string
 
 import phonology as phon
 
@@ -12,12 +13,11 @@ from itertools import product
 # This syllabifer departs from the earlier syllabifiers, allowing rules to
 # remove previously inserted syllable boundaries (see T8).
 
-
 # Syllabifier -----------------------------------------------------------------
 
 def syllabify(word):
     '''Syllabify the given word, whether simplex or complex.'''
-    compound = bool(re.search(r'(-| |=)', word))
+    compound = not word.isalpha()
     syllabify = _syllabify_complex if compound else _syllabify_simplex
     syllabifications = list(syllabify(word))
 
@@ -32,10 +32,11 @@ def syllabify(word):
 def _syllabify_complex(word):
     syllabifications = []
 
-    # split the word along any delimiters (a hyphen, space, or equal sign) and
-    # syllabify the individual parts separately
-    for w in re.split(r'(-| |=)', word):
-        sylls = [(w, ' ='), ] if w in u'- =' else _syllabify_simplex(w)
+    # split the word along any punctuation (e.g., a hyphen, space, or equal
+    # sign) and syllabify the individual parts separately
+    # for w in re.split(DELIM, word, flags=FLAGS):
+    for w in nonalpha_split(word):
+        sylls = [(w, ' ' + w), ] if not w.isalpha() else _syllabify_simplex(w)
         syllabifications.append(sylls)
 
     for x in (w for w in product(*syllabifications)):
@@ -283,20 +284,41 @@ def T11(word, rules):
 
     return WORD, rules
 
+# Sequences / Regex -----------------------------------------------------------
 
-# Sequences -------------------------------------------------------------------
+FLAGS = re.I | re.U
+
+
+def nonalpha_split(string):
+    '''Split 'string' along any punctuation or whitespace.'''
+    return re.split(
+        ur'([\s0-9!#$%&*+,.:;<=>?@^_`{}|~\/\\\-\"\'\(\)\[\]]+)',
+        string,
+        flags=FLAGS,
+        )
+
+
+def extract_words(string):
+    '''Extract any constituents from 'string' and return them as a list.'''
+    return re.split(
+        ur'[\s0-9!#$%&*+,:;<=>?@^_`{}|~\/\\\-\"\'\(\)\[\]]+',
+        string,
+        flags=FLAGS,
+        )
 
 
 def vv_sequences(word):
     # this pattern searches for (overlapping) VV sequences
-    return re.finditer(ur'(?=([ieaouäöy]{2}))', word, flags=re.I | re.U)
+    return re.finditer(ur'(?=([ieaouäöy]{2}))', word, flags=FLAGS)
 
 
 def long_vowel_sequences(word):
     # this pattern searches for any VVV sequence that contains a long vowel
     return re.finditer(
         ur'(^|[^ieaouäöy]+)([ieaouäöy]{1}(ii|ee|aa|oo|uu|ää|öö|yy)|(ii|ee|aa|oo|uu|ää|öö|yy)[ieaouäöy])([^ieaouäöy]+|$)',  # noqa
-        word, flags=re.I | re.U)
+        word,
+        flags=FLAGS,
+        )
 
 
 def tail_diphthongs(word):
@@ -304,7 +326,9 @@ def tail_diphthongs(word):
     # the first syllable
     return re.match(
         ur'^[^ieaouäöy]*(i\.e|u\.o|y\.ö)(?:\.|[^ieaouäöy]+|$)',
-        word, flags=re.I | re.U)
+        word,
+        flags=FLAGS,
+        )
 
 
 def u_y_final_diphthongs(word):
@@ -316,26 +340,29 @@ def u_y_final_diphthongs(word):
     # harmony (e.g., 'Friday')
     return re.search(
         ur'(?:[^ieaouäöy\.]+\.*)(au|eu|ou|iu|iy|ey|äy|öy)(?:(\.*[^ieaouäöy\.]+|$))',  # noqa
-        word, flags=re.I | re.U)
+        word,
+        flags=FLAGS,
+        )
 
 
 def precedence_sequences(word):
     # this pattern searches for any primary-stressed VVV sequence that contains
     # a /u,y/-final diphthong
     return re.finditer(
-        ur'^[^ieaouäöy]*([ieaoäö]{1}(au|eu|ou|iu|iy|ey|äy|öy)|(au|eu|ou|iu|iy|ey|Ay|Oy)[ieaoäö]{1})[^ieaouäöy]',  # noqa
-        word, flags=re.I | re.U)
+        ur'^[^ieaouäöy]*([ieaoäö]{1}(au|eu|ou|iu|iy|ey|äy|öy)|(au|eu|ou|iu|iy|ey|äy|öy)[ieaoäö]{1})[^ieaouäöy]',  # noqa
+        word,
+        flags=FLAGS,
+        )
 
 
 # Ranking ---------------------------------------------------------------------
-
 
 def wsp(word):
     '''Return the number of unstressed superheavy syllables.'''
     violations = 0
     unstressed = []
 
-    for w in filter(None, re.split(r'=| |-', word)):
+    for w in extract_words(word):
         unstressed += w.split('.')[1::2]  # even syllables
 
         # include extrametrical odd syllables as potential WSP violations
@@ -344,8 +371,7 @@ def wsp(word):
 
     # SHSP
     for syll in unstressed:
-        if phon.is_consonant(syll[-1]) and \
-                re.search(ur'[ieaouäöy]{2}', syll, flags=re.I | re.U):
+        if re.search(ur'[ieaouäöy]{2}[^$ieaouäöy]+', syll, flags=FLAGS):
             violations += 1
 
     # # WSP (CVV = heavy)
@@ -363,7 +389,7 @@ def pk_prom(word):
     violations = 0
     stressed = []
 
-    for w in filter(None, re.split(r'=| |-', word)):
+    for w in extract_words(word):
         stressed += w.split('.')[2:-1:2]  # odd syllables, excl. word-initial
 
     # (CVV = light)
