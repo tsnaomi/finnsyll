@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/tsnaomi/finnsyll.png?branch=master)](https://travis-ci.org/tsnaomi/finnsyll)
+.. image:: https://travis-ci.org/tsnaomi/finnsyll.svg?branch=master
+    :target: https://travis-ci.org/tsnaomi/finnsyll
 
 FinnSyll
 ********
