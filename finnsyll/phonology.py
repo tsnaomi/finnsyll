@@ -2,8 +2,6 @@
 
 import re
 
-from six import u
-
 
 # Finnish phones --------------------------------------------------------------
 
