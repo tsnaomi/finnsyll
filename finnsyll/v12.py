@@ -1,15 +1,13 @@
 # coding=utf-8
-from __future__ import unicode_literal
-
-# First Python 3-compatible version.
+from __future__ import unicode_literals
 
 import re
-# import string
-
-import phonology as phon
 
 from itertools import product
+from . import phonology as phon
 
+
+# First Python 3-compatible version.
 
 # This syllabifer departs from the earlier syllabifiers, allowing rules to
 # remove previously inserted syllable boundaries (see T8).
@@ -75,7 +73,7 @@ def _post_process(word, rules):
 def T1(word):
     '''Insert a syllable boundary in front of every CV sequence.'''
     # split consonants and vowels: 'balloon' -> ['b', 'a', 'll', 'oo', 'n']
-    WORD = filter(None, re.split(r'([ieaouäöy]+)', word, flags=re.I | re.U))
+    WORD = [i for i in re.split(r'([ieaouäöy]+)', word, flags=FLAGS) if i]
 
     # keep track of which sub-rules are applying
     sub_rules = set()
@@ -462,4 +460,4 @@ if __name__ == '__main__':
 
     for word in words:
         variants = '\t'.join(w for w, _ in syllabify(word.upper()))
-        print variants.lower().encode('utf-8')
+        print(variants.lower().encode('utf-8'))

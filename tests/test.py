@@ -2,30 +2,23 @@
 
 # python -m unittest discover
 
-import unittest
-
-import finnsyll.phonology as phon
-
 try:
     import cpickle as pickle
 
 except ImportError:
     import pickle
 
-try:
-    # Python 3
-    from ..finnsyll import FinnSyll
+import unittest
+import finnsyll.phonology as phon
 
-except (ImportError, ValueError):
-    # Python 2
-    from finnsyll import FinnSyll
+from finnsyll import FinnSyll
 
 
 def error_helper(self, func, cases):
     # accrue all of the errors for each test and print them in bulk
     errors = []
 
-    for i, expected in cases.iteritems():
+    for i, expected in cases.items():
         test = func(i)
 
         try:
@@ -227,21 +220,13 @@ class TestSyllabifierKwargs(unittest.TestCase):
 
 class TestSyllabifierOutput(unittest.TestCase):
 
-    def test_byte_unicode_input(self):
+    def test_str_unicode_input(self):
         # ensure that the syllabifier outputs utf-8 decoded unicode while
         # accepting byte or unicode input
         F = FinnSyll(split_compounds=True, variation=False, track_rules=False)
         errors = []
 
-        cases = (
-            # byte strings
-            'kesäillan',
-            unicode('kesäillan', 'latin-1').encode('latin-1'),
-            unicode('kesäillan', 'utf-8').encode('utf-8'),
-            # unicode strings
-            u'kesäillan',
-            unicode('kesäillan', 'utf-8'),
-            )
+        cases = ('kesäillan', u'kesäillan')
 
         for case in cases:
             try:
@@ -252,6 +237,17 @@ class TestSyllabifierOutput(unittest.TestCase):
 
         if errors:
             raise AssertionError('\n\n' + '\n\n'.join(errors).encode('utf-8'))
+
+    def test_non_str_unicode_input(self):
+        # ensure that the syllabifier throws up when it receives non-str /
+        # non-unicode input
+        F = FinnSyll(split_compounds=True, variation=False, track_rules=False)
+
+        cases = (31415926, True)
+
+        for case in cases:
+            with self.assertRaises(TypeError):
+                F.syllabify(case)
 
     def test_punctuated_input(self):
         # ensure that the syllabififer can syllabify delimited and punctuated
@@ -306,17 +302,17 @@ class TestVariantOrdering(unittest.TestCase):
         # preferred to least preferred
         F = FinnSyll(split_compounds=True, variation=True, track_rules=False)
 
-        with open('tests/ranked_sylls.pickle', 'r+') as f:
+        with open('tests/ranked_sylls.pickle', 'rb') as f:
             pairs = pickle.load(f)
 
         errors = 0
 
-        for i, expected in pairs.iteritems():
+        for i, expected in pairs.items():
 
             try:
                 test = F.syllabify(unicode(i, 'utf-8').lower())
 
-            except TypeError:
+            except (TypeError, NameError):
                 test = F.syllabify(i.lower())
 
             try:
@@ -411,8 +407,7 @@ class TestConstraints(unittest.TestCase):
             u'ECE': True,   # CVC
             }
 
-        for k, v in cases.items():
-            cases[k.lower()] = v
+        cases = {k.upper(): v for k, v in cases.items()}
 
         error_helper(self, phon.min_word, cases)
 
@@ -436,8 +431,7 @@ class TestConstraints(unittest.TestCase):
             u'ätt': True,
             }
 
-        for k, v in cases.items():
-            cases[k.upper()] = v
+        cases = {k.upper(): v for k, v in cases.items()}
 
         error_helper(self, phon.word_final, cases)
 
@@ -473,8 +467,7 @@ class TestConstraints(unittest.TestCase):
             u'cac': True,   # CVC
             }
 
-        for k, v in cases.items():
-            cases[k.upper()] = v
+        cases = {k.upper(): v for k, v in cases.items()}
 
         error_helper(self, phon.sonseq, cases)
 
@@ -499,7 +492,6 @@ class TestConstraints(unittest.TestCase):
             u'yleensä': True,
             }
 
-        for k, v in cases.items():
-            cases[k.upper()] = v
+        cases = {k.upper(): v for k, v in cases.items()}
 
         error_helper(self, phon.harmonic, cases)

@@ -1,32 +1,25 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import math
-import morfessor
-import os
-
 try:
     import cpickle as pickle
 
 except ImportError:
     import pickle
 
-from os.path import dirname, join
-
-
 try:
-    # Python 3
     from itertools import zip_longest as izip, product
 
-    from .phonology import CONSTRAINTS
-    from .v12 import nonalpha_split, syllabify
-
-except (ImportError, ValueError):
-    # Python 2
+except ImportError:
     from itertools import izip_longest as izip, product
 
-    from phonology import CONSTRAINTS
-    from v12 import nonalpha_split, syllabify
+import math
+import morfessor
+import os
+
+from os.path import dirname, join
+from .phonology import CONSTRAINTS
+from .v12 import nonalpha_split, syllabify
 
 
 class FinnSyll:
@@ -64,13 +57,15 @@ class FinnSyll:
 
     def _normalize(self, word):
         # convert word to unicode
-        try:
-            # if bytes...
-            return unicode(word, 'utf-8')
+        if isinstance(word, str):
 
-        except TypeError:
-            # if unicode...
-            return unicode(word.encode('utf-8'), 'utf-8')
+            try:
+                return word.decode('utf-8')
+
+            except AttributeError:
+                pass
+
+        return word
 
     # syllabify ---------------------------------------------------------------
 
