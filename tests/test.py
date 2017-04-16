@@ -24,11 +24,16 @@ def error_helper(self, func, cases):
         try:
             self.assertEqual(test, expected)
 
-        except AssertionError as e:
-            errors.append(e.message)
+        except AssertionError as exception:
+            errors.append(str(exception))
 
     if errors:
-        raise AssertionError('\n\n' + '\n\n'.join(errors).encode('utf-8'))
+
+        try:
+            raise AssertionError('\n\n' + '\n\n'.join(errors).encode('utf-8'))
+
+        except TypeError:
+            raise AssertionError('\n\n' + '\n\n'.join(errors))
 
 
 class TestSyllabifierKwargs(unittest.TestCase):
@@ -293,6 +298,23 @@ class TestSyllabifierOutput(unittest.TestCase):
         for ch in consonants:
             self.assertEqual(phon.is_vowel(ch), False)
             self.assertEqual(phon.is_consonant(ch), True)
+
+    def test_edge_cases(self):
+        # ensure that the syllabifier can handle edge cases not included in
+        # the Aamulehti corpus
+        F = FinnSyll(variation=False)
+
+        cases = {
+            'nauumme': u'nau.um.me',
+            'leuun': u'leu.un',
+            'riuun': u'riu.un',
+            # 'ruoon': u'ruo.on',
+        }
+
+        with self.assertRaises(AssertionError):
+            assert F.syllabify('ruoon') == u'ruo.on'
+
+        error_helper(self, F.syllabify, cases)
 
 
 class TestVariantOrdering(unittest.TestCase):
