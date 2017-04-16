@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import unicode_literal
 
 # First Python 3-compatible version.
 
@@ -74,7 +75,7 @@ def _post_process(word, rules):
 def T1(word):
     '''Insert a syllable boundary in front of every CV sequence.'''
     # split consonants and vowels: 'balloon' -> ['b', 'a', 'll', 'oo', 'n']
-    WORD = filter(None, re.split(ur'([ieaouäöy]+)', word, flags=re.I | re.U))
+    WORD = filter(None, re.split(r'([ieaouäöy]+)', word, flags=re.I | re.U))
 
     # keep track of which sub-rules are applying
     sub_rules = set()
@@ -185,7 +186,7 @@ def T4(word, rules):
     '''Optionally split /u,y/-final diphthongs that do not take primary stress.
     E.g., [lau.ka.us], [va.ka.ut.taa].'''
     WORD = re.split(
-        ur'([ieaouäöy]+[^ieaouäöy]+\.*[ieaoäö]{1}(?:u|y)(?:\.*[^ieaouäöy]+|$))',  # noqa
+        r'([ieaouäöy]+[^ieaouäöy]+\.*[ieaoäö]{1}(?:u|y)(?:\.*[^ieaouäöy]+|$))',  # noqa
         word, flags=re.I | re.U)
 
     PARTS = [[] for part in range(len(WORD))]
@@ -292,7 +293,7 @@ FLAGS = re.I | re.U
 def nonalpha_split(string):
     '''Split 'string' along any punctuation or whitespace.'''
     return re.split(
-        ur'([\s0-9!#$%&*+,.:;<=>?@^_`{}|~\/\\\-\"\'\(\)\[\]]+)',
+        r'([\s0-9!#$%&*+,.:;<=>?@^_`{}|~\/\\\-\"\'\(\)\[\]]+)',
         string,
         flags=FLAGS,
         )
@@ -301,7 +302,7 @@ def nonalpha_split(string):
 def extract_words(string):
     '''Extract any constituents from 'string' and return them as a list.'''
     return re.split(
-        ur'[\s0-9!#$%&*+,:;<=>?@^_`{}|~\/\\\-\"\'\(\)\[\]]+',
+        r'[\s0-9!#$%&*+,:;<=>?@^_`{}|~\/\\\-\"\'\(\)\[\]]+',
         string,
         flags=FLAGS,
         )
@@ -309,13 +310,13 @@ def extract_words(string):
 
 def vv_sequences(word):
     # this pattern searches for (overlapping) VV sequences
-    return re.finditer(ur'(?=([ieaouäöy]{2}))', word, flags=FLAGS)
+    return re.finditer(r'(?=([ieaouäöy]{2}))', word, flags=FLAGS)
 
 
 def long_vowel_sequences(word):
     # this pattern searches for any VVV sequence that contains a long vowel
     return re.finditer(
-        ur'(^|[^ieaouäöy]+)([ieaouäöy]{1}(ii|ee|aa|oo|uu|ää|öö|yy)|(ii|ee|aa|oo|uu|ää|öö|yy)[ieaouäöy])([^ieaouäöy]+|$)',  # noqa
+        r'(^|[^ieaouäöy]+)([ieaouäöy]{1}(ii|ee|aa|oo|uu|ää|öö|yy)|(ii|ee|aa|oo|uu|ää|öö|yy)[ieaouäöy])([^ieaouäöy]+|$)',  # noqa
         word,
         flags=FLAGS,
         )
@@ -325,7 +326,7 @@ def tail_diphthongs(word):
     # this pattern searches for any standalone /ie/, /uo/, or /yö/ sequence in
     # the first syllable
     return re.match(
-        ur'^[^ieaouäöy]*(i\.e|u\.o|y\.ö)(?:\.|[^ieaouäöy]+|$)',
+        r'^[^ieaouäöy]*(i\.e|u\.o|y\.ö)(?:\.|[^ieaouäöy]+|$)',
         word,
         flags=FLAGS,
         )
@@ -339,7 +340,7 @@ def u_y_final_diphthongs(word):
     # unnecessary splitting of Vy and Vu loanword sequences that violate vowel
     # harmony (e.g., 'Friday')
     return re.search(
-        ur'(?:[^ieaouäöy\.]+\.*)(au|eu|ou|iu|iy|ey|äy|öy)(?:(\.*[^ieaouäöy\.]+|$))',  # noqa
+        r'(?:[^ieaouäöy\.]+\.*)(au|eu|ou|iu|iy|ey|äy|öy)(?:(\.*[^ieaouäöy\.]+|$))',  # noqa
         word,
         flags=FLAGS,
         )
@@ -349,7 +350,7 @@ def precedence_sequences(word):
     # this pattern searches for any primary-stressed VVV sequence that contains
     # a /u,y/-final diphthong
     return re.finditer(
-        ur'^[^ieaouäöy]*([ieaoäö]{1}(au|eu|ou|iu|iy|ey|äy|öy)|(au|eu|ou|iu|iy|ey|äy|öy)[ieaoäö]{1})[^ieaouäöy]',  # noqa
+        r'^[^ieaouäöy]*([ieaoäö]{1}(au|eu|ou|iu|iy|ey|äy|öy)|(au|eu|ou|iu|iy|ey|äy|öy)[ieaoäö]{1})[^ieaouäöy]',  # noqa
         word,
         flags=FLAGS,
         )
@@ -371,7 +372,7 @@ def wsp(word):
 
     # SHSP
     for syll in unstressed:
-        if re.search(ur'[ieaouäöy]{2}[^$ieaouäöy]+', syll, flags=FLAGS):
+        if re.search(r'[ieaouäöy]{2}[^$ieaouäöy]+', syll, flags=FLAGS):
             violations += 1
 
     # # WSP (CVV = heavy)

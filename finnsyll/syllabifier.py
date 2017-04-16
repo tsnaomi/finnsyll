@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import unicode_literals
 
 import math
 import morfessor
@@ -175,7 +176,7 @@ class FinnSeg(object):
             token.append(comp)
 
         # return the segmentation in string form
-        return u''.join(token)
+        return ''.join(token)
 
     def _score_candidates(self, comp, candidates):
         count = len(candidates)

@@ -1,34 +1,34 @@
 # coding=utf-8
+from __future__ import unicode_literals
 
 import re
-
 
 # Finnish phones --------------------------------------------------------------
 
 # Finnish vowels
-VOWELS = u'ieaouäöy'
+VOWELS = 'ieaouäöy'
 
 # Finnish phonemic inventory
-PHONEMIC_INVENTORY = VOWELS + u'dhjklmnprstv -='
+PHONEMIC_INVENTORY = VOWELS + 'dhjklmnprstv -='
 
 # Finnish diphthongs
 DIPHTHONGS = [
-    u'ai', u'ei', u'oi', u'äi', u'öi', u'ui', u'yi',  # i-final
-    u'au', u'eu', u'ou', u'iu', u'ey', u'äy', u'öy', u'iy',  # u/y-final
-    # u'ie', u'uo', u'yö',  # tail
-    u'ay', u'oy', u'uy',  # loanword
+    'ai', 'ei', 'oi', 'äi', 'öi', 'ui', 'yi',  # i-final
+    'au', 'eu', 'ou', 'iu', 'ey', 'äy', 'öy', 'iy',  # u/y-final
+    # 'ie', 'uo', 'yö',  # tail
+    'ay', 'oy', 'uy',  # loanword
     ]
 
 # Finnish consonant clusters (see Karlsson 1985, #4)
 CLUSTERS = [
-    u'bl', u'br', u'dr', u'fl', u'fr', u'gl', u'gr', u'kl', u'kr', u'kv',
-    u'pl', u'pr', u'cl', u'qv', u'schm',
+    'bl', 'br', 'dr', 'fl', 'fr', 'gl', 'gr', 'kl', 'kr', 'kv',
+    'pl', 'pr', 'cl', 'qv', 'schm',
     ]
 
 # Finnish onsets
 ONSETS = [
-    u'pl', u'pr', u'tr', u'kl', u'kr', u'sp', u'st', u'sk', u'ps', u'ts',
-    u'sn', u'dr', u'spr', u'str',
+    'pl', 'pr', 'tr', 'kl', 'kr', 'sp', 'st', 'sk', 'ps', 'ts',
+    'sn', 'dr', 'spr', 'str',
     ]
 
 
@@ -46,12 +46,12 @@ def is_diphthong(chars):
 
 def is_front(ch):
     '''Return True if 'ch' is a Finnish front vowel.'''
-    return ch.lower() in u'äöy'
+    return ch.lower() in 'äöy'
 
 
 def is_back(ch):
     '''Return True if 'ch' is a Finnish back vowel.'''
-    return ch.lower() in u'aou'
+    return ch.lower() in 'aou'
 
 
 def is_long(chars):
@@ -73,12 +73,12 @@ def is_cluster(chars):
 
 def is_coronal(ch):
     '''Return True if 'ch' is a Finnish coronal consonant.'''
-    return ch.lower() in u'lnrst'  # Suomi et al. 2008
+    return ch.lower() in 'lnrst'  # Suomi et al. 2008
 
 
 def is_sonorant(ch):
     '''Return True if 'ch' is a Finnish sonorant consonant.'''
-    return ch.lower() in u'lmnr'
+    return ch.lower() in 'lmnr'
 
 
 # Linguistic constraints ------------------------------------------------------
@@ -93,12 +93,7 @@ def min_word(word):
 
 def sonseq(word):
     '''Return True if 'word' does not violate sonority sequencing.'''
-    try:
-        parts = re.split(ur'([ieaouäöy]+)', word, flags=re.I | re.U)
-
-    except SyntaxError:
-        parts = re.split(r'([ieaouäöy]+)', word, flags=re.I | re.U)
-
+    parts = re.split(r'([ieaouäöy]+)', word, flags=re.I | re.U)
     onset, coda = parts[0], parts[-1]
 
     #  simplex onset      Finnish complex onset
@@ -116,7 +111,7 @@ def word_final(word):
 
 def harmonic(word):
     '''Return True if the word's vowels agree in frontness/backness.'''
-    depth = {u'ä': 0, u'ö': 0, u'y': 0, u'a': 1, u'o': 1, u'u': 1}
+    depth = {'ä': 0, 'ö': 0, 'y': 0, 'a': 1, 'o': 1, 'u': 1}
     vowels = filter(lambda ch: is_front(ch) or is_back(ch), word)
     depths = (depth[x.lower()] for x in vowels)
 
@@ -157,10 +152,10 @@ def is_foreign(word):
 
 def _has_foreign_characters(word):
     # Finnish allows /d/ only word-medially
-    phonemic_inventory = VOWELS + u'dhjklmnprstv -='
+    phonemic_inventory = VOWELS + 'dhjklmnprstv -='
     word = word.lower()
 
-    if word.startswith((u'd')):
+    if word.startswith(('d')):
         return True
 
     foreign_chars = set(ch for ch in word if ch not in phonemic_inventory)
@@ -168,7 +163,7 @@ def _has_foreign_characters(word):
     # the letter 'g' indicates a foreign word unless it is preceded by an 'n',
     # in which case, their collective underlying form is /ŋ/, which does appear
     # in the Finnish phonemic inventory
-    if set(u'g') == foreign_chars:
+    if set('g') == foreign_chars:
         return word.count('g') != word.count('ng')  # TEST
 
     return bool(foreign_chars)
