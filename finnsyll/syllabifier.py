@@ -19,12 +19,18 @@ import os
 
 from os.path import dirname, join
 from .phonology import CONSTRAINTS
-from .v12 import nonalpha_split, syllabify
+from .utilities import nonalpha_split
+from .v13 import syllabify
 
 
 class FinnSyll:
 
-    def __init__(self, split_compounds=True, variation=True, track_rules=False):  # noqa
+    def __init__(
+        self,
+        split_compounds=True,
+        variation=True,
+        track_rules=False,
+            ):
         self.DEV = bool(os.environ.get('FINNSYLL_DEV'))
         self._split = FinnSeg().segment  # instantiate compound segmenter
         self.split_compounds = split_compounds

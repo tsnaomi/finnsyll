@@ -1,6 +1,6 @@
 # coding=utf-8
 
-# First Python 3-compatible version.
+# First (almost) Python 3-compatible version.
 
 import re
 
