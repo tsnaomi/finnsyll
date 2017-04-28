@@ -40,8 +40,38 @@ class TestSyllabifierKwargs(unittest.TestCase):
 
     def test_full_functionality(self):
         # ensure that the syllabifier returns all known variants and applied
-        # rules as a list of tuples, with compound splitting
-        F = FinnSyll(split_compounds=True, variation=True, track_rules=True)
+        # rules as a list of tuples, with compound splitting and stress
+        # assignment
+        F = FinnSyll(split=True, variation=True, rules=True, stress=True)
+
+        cases = {
+            # simplex, no variation
+            'runoja': [
+                ('\'ru.no.ja', 'T1'),
+                ],
+            # simplex, variation
+            'oikeus': [
+                ('\'oi.ke.us', 'T1 T4'),
+                ('\'oi.keus', 'T1'),
+                ],
+            # complex, no variation
+            'kuukautta': [
+                ('\'kuu.\'kaut.ta', 'T0 = T1'),
+                ],
+            # complex, variation
+            'hovioikeus': [
+                ('\'ho.vi.\'oi.ke.us', 'T1 = T1 T4'),
+                ('\'ho.vi.\'oi.keus', 'T1 = T1'),
+                ],
+            }
+
+        error_helper(self, F.syllabify, cases)
+
+    def test_no_stress(self):
+        # ensure that the syllabifier returns all known variants and applied
+        # rules as a list of tuples, with compound splitting or stress
+        # assignment
+        F = FinnSyll(split=True, variation=True, rules=True, stress=False)
 
         cases = {
             # simplex, no variation
@@ -68,8 +98,104 @@ class TestSyllabifierKwargs(unittest.TestCase):
 
     def test_no_splitting(self):
         # ensure that the syllabifier returns all known variants and applied
-        # rules as a list of tuples, minus compound splitting
-        F = FinnSyll(split_compounds=False, variation=True, track_rules=True)
+        # rules as a list of tuples, minus compound splitting but including
+        # stress assignment
+        F = FinnSyll(split=False, variation=True, rules=True, stress=True)
+
+        cases = {
+            # simplex, no variation
+            'runoja': [
+                ('\'ru.no.ja', 'T1'),
+                ],
+            # simplex, variation
+            'oikeus': [
+                ('\'oi.ke.us', 'T1 T4'),
+                ('\'oi.keus', 'T1'),
+                ],
+            # complex, no variation
+            'jukolantupien': [
+                ('\'ju.ko.`lan.tu.`pi.en', 'T1 T2'),
+                ],
+            # complex, variation
+            'hovioikeus': [
+                ('\'ho.vi.`oi.ke.us', 'T1 T2 T4'),
+                ('\'ho.vi.`oi.keus', 'T1 T2'),
+                ],
+            }
+
+        error_helper(self, F.syllabify, cases)
+
+    def test_no_variation(self):
+        # ensure that the syllabifier returns the most preferred variant and
+        # its applied rules as a tuple, with compound splitting and stress
+        # assignment
+        F = FinnSyll(split=True, variation=False, rules=True, stress=True)
+
+        cases = {
+            # simplex, no variation
+            'runoja': ('\'ru.no.ja', 'T1'),
+            # simplex, variation
+            'oikeus': ('\'oi.ke.us', 'T1 T4'),
+            # complex, no variation
+            'kuukautta': ('\'kuu.\'kaut.ta', 'T0 = T1'),
+            # complex, variation
+            'hovioikeus': ('\'ho.vi.\'oi.ke.us', 'T1 = T1 T4'),
+            }
+
+        error_helper(self, F.syllabify, cases)
+
+    def test_no_rules(self):
+        # ensure that the syllabifier returns all known variants as a list of
+        # strings, with compound splitting and stress assignment
+        F = FinnSyll(split=True, variation=True, rules=False, stress=True)
+
+        cases = {
+            # simplex, no variation
+            'runoja': [
+                '\'ru.no.ja',
+                ],
+            # simplex, variation
+            'oikeus': [
+                '\'oi.ke.us',
+                '\'oi.keus',
+                ],
+            # complex, no variation
+            'kuukautta': [
+                '\'kuu.\'kaut.ta',
+                ],
+            # complex, variation
+            'hovioikeus': [
+                '\'ho.vi.\'oi.ke.us',
+                '\'ho.vi.\'oi.keus',
+                ],
+            }
+
+        error_helper(self, F.syllabify, cases)
+
+    def test_no_variation_or_stress(self):
+        # ensure that the syllabifier returns the most preferred variant and
+        # its applied rules as a tuple, with compound splitting but minus
+        # stress assignment
+        F = FinnSyll(split=True, variation=False, rules=True, stress=False)
+
+        cases = {
+            # simplex, no variation
+            'runoja': ('ru.no.ja', 'T1'),
+            # simplex, variation
+            'oikeus': ('oi.ke.us', 'T1 T4'),
+            # complex, no variation
+            'kuukautta': ('kuu.kaut.ta', 'T0 = T1'),
+            # complex, variation
+            'hovioikeus': ('ho.vi.oi.ke.us', 'T1 = T1 T4'),
+            }
+
+        error_helper(self, F.syllabify, cases)
+
+    def test_no_splitting_or_stress(self):
+        # ensure that the syllabifier returns all known variants and applied
+        # rules as a list of tuples, minus compound splitting and stress
+        # assignment
+        F = FinnSyll(split=False, variation=True, rules=True, stress=False)
 
         cases = {
             # simplex, no variation
@@ -94,28 +220,10 @@ class TestSyllabifierKwargs(unittest.TestCase):
 
         error_helper(self, F.syllabify, cases)
 
-    def test_no_variation(self):
-        # ensure that the syllabifier returns the most preferred variant and
-        # its applied rules as a tuple, with compound splitting
-        F = FinnSyll(split_compounds=True, variation=False, track_rules=True)
-
-        cases = {
-            # simplex, no variation
-            'runoja': ('ru.no.ja', 'T1'),
-            # simplex, variation
-            'oikeus': ('oi.ke.us', 'T1 T4'),
-            # complex, no variation
-            'kuukautta': ('kuu.kaut.ta', 'T0 = T1'),
-            # complex, variation
-            'hovioikeus': ('ho.vi.oi.ke.us', 'T1 = T1 T4'),
-            }
-
-        error_helper(self, F.syllabify, cases)
-
-    def test_no_rules(self):
+    def test_no_rules_or_stress(self):
         # ensure that the syllabifier returns all known variants as a list of
-        # strings, with compound splitting
-        F = FinnSyll(split_compounds=True, variation=True, track_rules=False)
+        # strings, with compound splitting but minus stress assignment
+        F = FinnSyll(split=True, variation=True, rules=False, stress=False)
 
         cases = {
             # simplex, no variation
@@ -140,10 +248,76 @@ class TestSyllabifierKwargs(unittest.TestCase):
 
         error_helper(self, F.syllabify, cases)
 
+    def test_no_splitting_or_rules(self):
+        # ensure that the syllabifier returns all known variants as a list of
+        # strings, minus compound splitting but including stress assignment
+        F = FinnSyll(split=False, variation=True, rules=False, stress=True)
+
+        cases = {
+            # simplex, no variation
+            'runoja': [
+                '\'ru.no.ja',
+                ],
+            # simplex, variation
+            'oikeus': [
+                '\'oi.ke.us',
+                '\'oi.keus',
+                ],
+            # complex, no variation
+            'jukolantupien': [
+                '\'ju.ko.`lan.tu.`pi.en',
+                ],
+            # complex, variation
+            'hovioikeus': [
+                '\'ho.vi.`oi.ke.us',
+                '\'ho.vi.`oi.keus',
+                ],
+            }
+
+        error_helper(self, F.syllabify, cases)
+
     def test_no_splitting_or_variation(self):
         # ensure that the syllabifier returns the most preferred variant and
-        # its applied rules as a tuple, minus compound splitting
-        F = FinnSyll(split_compounds=False, variation=False, track_rules=True)
+        # its applied rules as a tuple, minus compound splitting but including
+        # stress assignment
+        F = FinnSyll(split=False, variation=False, rules=True, stress=True)
+
+        cases = {
+            # simplex, no variation
+            'runoja': ('\'ru.no.ja', 'T1'),
+            # simplex, variation
+            'oikeus': ('\'oi.ke.us', 'T1 T4'),
+            # complex, no variation
+            'kuukautta': ('\'kuu.ka.`ut.ta', 'T1 T4'),
+            # complex, variation
+            'hovioikeus': ('\'ho.vi.`oi.ke.us', 'T1 T2 T4'),
+            }
+
+        error_helper(self, F.syllabify, cases)
+
+    def test_no_variation_or_rules(self):
+        # ensure that the syllabifier returns the most preferred variant as a
+        # string, with compound splitting and stress assignment
+        F = FinnSyll(split=True, variation=False, rules=False, stress=True)
+
+        cases = {
+            # simplex, no variation
+            'runoja': '\'ru.no.ja',
+            # simplex, variation
+            'oikeus': '\'oi.ke.us',
+            # complex, no variation
+            'kuukautta': '\'kuu.\'kaut.ta',
+            # complex, variation
+            'hovioikeus': '\'ho.vi.\'oi.ke.us',
+            }
+
+        error_helper(self, F.syllabify, cases)
+
+    def test_no_splitting_or_variation_or_stress(self):
+        # ensure that the syllabifier returns the most preferred variant and
+        # its applied rules as a tuple, minus compound splitting and stress
+        # assignment
+        F = FinnSyll(split=False, variation=False, rules=True, stress=False)
 
         cases = {
             # simplex, no variation
@@ -158,10 +332,10 @@ class TestSyllabifierKwargs(unittest.TestCase):
 
         error_helper(self, F.syllabify, cases)
 
-    def test_no_splitting_or_rules(self):
+    def test_no_splitting_or_rules_or_stress(self):
         # ensure that the syllabifier returns all known variants as a list of
-        # strings, minus compound splitting
-        F = FinnSyll(split_compounds=False, variation=True, track_rules=False)
+        # strings, minus compound splitting and stress assignment
+        F = FinnSyll(split=False, variation=True, rules=False, stress=False)
 
         cases = {
             # simplex, no variation
@@ -186,10 +360,10 @@ class TestSyllabifierKwargs(unittest.TestCase):
 
         error_helper(self, F.syllabify, cases)
 
-    def test_no_variation_or_rules(self):
+    def test_no_variation_or_rules_or_stress(self):
         # ensure that the syllabifier returns the most preferred variant as a
-        # string, with compound splitting
-        F = FinnSyll(split_compounds=True, variation=False, track_rules=False)
+        # string, with compound splitting but minus stress assignment
+        F = FinnSyll(split=True, variation=False, rules=False, stress=False)
 
         cases = {
             # simplex, no variation
@@ -206,8 +380,26 @@ class TestSyllabifierKwargs(unittest.TestCase):
 
     def test_no_splitting_or_variation_or_rules(self):
         # ensure that the syllabifier returns the most preferred variant as a
-        # string, minus compound splitting
-        F = FinnSyll(split_compounds=False, variation=False, track_rules=False)
+        # string, minus compound splitting but including stress assignment
+        F = FinnSyll(split=False, variation=False, rules=False, stress=True)
+
+        cases = {
+            # simplex, no variation
+            'runoja': '\'ru.no.ja',
+            # simplex, variation
+            'oikeus': '\'oi.ke.us',
+            # complex, no variation
+            'kuukautta': '\'kuu.ka.`ut.ta',
+            # complex, variation
+            'hovioikeus': '\'ho.vi.`oi.ke.us',
+            }
+
+        error_helper(self, F.syllabify, cases)
+
+    def test_no_splitting_or_variation_or_rules_or_stress(self):
+        # ensure that the syllabifier returns the most preferred variant as a
+        # string, minus compound splitting and stress assignment
+        F = FinnSyll(split=False, variation=False, rules=False, stress=False)
 
         cases = {
             # simplex, no variation
@@ -228,7 +420,7 @@ class TestSyllabifierOutput(unittest.TestCase):
     def test_str_unicode_input(self):
         # ensure that the syllabifier outputs utf-8 decoded unicode while
         # accepting byte or unicode input
-        F = FinnSyll(split_compounds=True, variation=False, track_rules=False)
+        F = FinnSyll(split=True, variation=False, rules=False, stress=False)
         errors = []
 
         cases = ('kesäillan', u'kesäillan')
@@ -246,7 +438,7 @@ class TestSyllabifierOutput(unittest.TestCase):
     def test_non_str_unicode_input(self):
         # ensure that the syllabifier throws up when it receives non-str /
         # non-unicode input
-        F = FinnSyll(split_compounds=True, variation=False, track_rules=False)
+        F = FinnSyll(split=True, variation=False, rules=False, stress=False)
 
         cases = (31415926, True)
 
@@ -257,7 +449,7 @@ class TestSyllabifierOutput(unittest.TestCase):
     def test_punctuated_input(self):
         # ensure that the syllabififer can syllabify delimited and punctuated
         # input
-        F = FinnSyll(split_compounds=True, variation=False, track_rules=False)
+        F = FinnSyll(split=True, variation=False, rules=False, stress=False)
 
         lines = (
             u'Ei olko kaipuumme kuin haave naisentai sairaan näky,\n'
@@ -302,7 +494,7 @@ class TestSyllabifierOutput(unittest.TestCase):
     def test_edge_cases(self):
         # ensure that the syllabifier can handle edge cases not included in
         # the Aamulehti corpus
-        F = FinnSyll(variation=False)
+        F = FinnSyll(split=True, variation=False, rules=False, stress=False)
 
         cases = {
             'nauumme': u'nau.um.me',
@@ -317,12 +509,37 @@ class TestSyllabifierOutput(unittest.TestCase):
         error_helper(self, F.syllabify, cases)
 
 
-class TestVariantOrdering(unittest.TestCase):
+class TestAnotation(unittest.TestCase):
 
-    def test_variant_ordering(self):
+    def test_stress_assignment(self):
+        # ensure that...
+        F = FinnSyll(split=True, variation=True, rules=False, stress=True)
+
+        cases = {
+            # punctuated input
+            'ja villi on leimaus katseessas.--\nperu': [
+                '\'ja \'vil.li \'on \'lei.ma.us \'kat.sees.sas.--\n\'pe.ru',
+                '\'ja \'vil.li \'on \'lei.maus \'kat.sees.sas.--\n\'pe.ru',
+                ],
+            # secondary stress
+            'voimistelutti': [
+                '\'voi.mis.te.`lut.ti',
+                ],
+            # caveat
+            'voimistelut': [
+                '\'voi.mis.`te.lut',
+                ]
+            }
+
+        error_helper(self, F.syllabify, cases)
+
+
+class TestVariantOrdering(unittest.TestCase):  # TODO: TEST WITH STRESS
+
+    def test_variant_ordering_no_stress(self):
         # ensure that the syllabifier returns variants in order from most
         # preferred to least preferred
-        F = FinnSyll(split_compounds=True, variation=True, track_rules=False)
+        F = FinnSyll(split=True, variation=True, rules=False, stress=False)
 
         with open('tests/ranked_sylls.pickle', 'rb') as f:
             pairs = pickle.load(f)
@@ -361,7 +578,7 @@ class TestSegmenter(unittest.TestCase):
 
     def test_segmenter(self):
         # ensure that FinnSylll.split() splits words into any constituent words
-        F = FinnSyll()
+        F = FinnSyll(split=True, variation=True, rules=False, stress=False)
 
         cases = {
             'runoja': u'runoja',
@@ -380,7 +597,7 @@ class TestSegmenter(unittest.TestCase):
     def test_punctuated_capitalized_input(self):
         # ensure that FinnSyll.split() can split delimited, punctuated, and
         # capitalized input
-        F = FinnSyll()
+        F = FinnSyll(split=True, variation=True, rules=False, stress=False)
 
         case = (
             'runoja_oikeus8910kuukautta linja-AUTOASEMAN'
@@ -396,7 +613,7 @@ class TestSegmenter(unittest.TestCase):
 
     def test_is_complex(self):
         # ensure that FinnSylll.is_complex() detects compounds
-        F = FinnSyll()
+        F = FinnSyll(split=True, variation=True, rules=False, stress=False)
 
         cases = {
             'runoja': False,

@@ -8,13 +8,16 @@ from . import phonology as phon
 from .utilities import FLAGS, extract_words, nonalpha_split
 
 
+STRESS = False
+
+
 # Syllabifier -----------------------------------------------------------------
 
-def syllabify(word):
+def syllabify(word, stress=False):
     '''Syllabify the given word, whether simplex or complex.'''
     compound = not word.isalpha()
     syllabify = _syllabify_complex if compound else _syllabify_simplex
-    syllabifications = list(syllabify(word))
+    syllabifications = list(syllabify(word, stress=stress))
 
     # if variation, order variants from most preferred to least preferred
     if len(syllabifications) > 1:
@@ -24,15 +27,20 @@ def syllabify(word):
         yield _post_process(word, rules)
 
 
-def _syllabify_complex(word):
+def _syllabify_complex(word, stress=False):
     syllabifications = []
 
     # split the word along any punctuation (e.g., a hyphen, space, or equal
     # sign) and syllabify the individual parts separately
     # for w in re.split(DELIM, word, flags=FLAGS):
     for w in nonalpha_split(word):
-        sylls = [(w, ' ' + w), ] if not w.isalpha() else _syllabify_simplex(w)
-        syllabifications.append(sylls)
+
+        if w.isalpha():
+            # append syllabified simplex word
+            syllabifications.append(_syllabify_simplex(w, stress=stress))
+        else:
+            # append delimiter
+            syllabifications.append(([(w, ' ' + w), ]))
 
     for x in (w for w in product(*syllabifications)):
         word, rules = '', ''
@@ -44,7 +52,7 @@ def _syllabify_complex(word):
         yield word, rules
 
 
-def _syllabify_simplex(word):
+def _syllabify_simplex(word, stress=False):
     word, rules = T1(word)
     word, rules = T2(word, rules)
     word, rules = T8(word, rules)
@@ -53,11 +61,14 @@ def _syllabify_simplex(word):
         word, rules = T6(word, rules)
         word, rules = T11(word, rules)
 
+        # add stress assignment
+        if stress:
+            word = phon.stress(word)
+
         yield word, rules or ' T0'  # T0 means no rules have applied
 
 
 def _post_process(word, rules):
-    # word = str(replace_umlauts(word, put_back=True)).replace('=', '.')
     word = word.replace('=', '.')
     rules = rules[1:]
 
@@ -344,7 +355,7 @@ def wsp(word):
         if w.count('.') % 2 == 0:
             unstressed += [w.rsplit('.', 1)[-1], ]
 
-    # SHSP
+    # SHSP (CVVC = superheavy)
     for syll in unstressed:
         if re.search(r'[ieaouäöy]{2}[^$ieaouäöy]+', syll, flags=FLAGS):
             violations += 1
@@ -381,6 +392,11 @@ def pk_prom(word):
     return violations
 
 
+def nuc(word):
+    '''Return the number of nuclei.'''
+    return word.count('.') + 1
+
+
 def rank(syllabifications):
     '''Rank syllabifications.'''
 
@@ -388,15 +404,15 @@ def rank(syllabifications):
     #     word = s[0]
     #     w = wsp(word)
     #     p = pk_prom(word)
-    #     n = word.count('.') + 1
+    #     n = nuc(word)
     #     t = w + p + n
-    #     print '%s\nwsp: %s\npk: %s\nnuc: %s\ntotal: %s' % (word, w, p, n, t)
+    #     print('%s\twsp: %s\tpk: %s\tnuc: %s\ttotal: %s' % (word, w, p, n, t))
 
     #     return w + p + n
 
     # syllabifications.sort(key=key)
 
-    syllabifications.sort(key=lambda s: wsp(s[0]) + pk_prom(s[0]) + len(s[0]))
+    syllabifications.sort(key=lambda s: wsp(s[0]) + pk_prom(s[0]) + nuc(s[0]))
 
     return syllabifications
 

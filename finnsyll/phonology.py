@@ -1,5 +1,6 @@
 # coding=utf-8
 from __future__ import unicode_literals
+from .utilities import FLAGS
 
 import re
 
@@ -80,6 +81,54 @@ def is_coronal(ch):
 def is_sonorant(ch):
     '''Return True if 'ch' is a Finnish sonorant consonant.'''
     return ch.lower() in 'lmnr'
+
+
+# Annotation functions --------------------------------------------------------
+
+def is_light(syll):
+    ''' '''
+    return re.match(r'(^|[^ieaouäöy]+)[ieaouäöy]{1}$', syll, flags=FLAGS)
+
+
+def is_heavy(syll):
+    ''' '''
+    return not is_light(syll)
+
+
+def stress(syllabified_simplex_word):
+    ''' '''
+    syllables = syllabified_simplex_word.split('.')
+    stressed = '\'' + syllables[0]  # primary stress
+
+    try:
+        n = 0
+        medial = syllables[1:-1]
+
+        for i, syll in enumerate(medial):
+
+            if (i + n) % 2 == 0:
+                stressed += '.' + syll
+
+            else:
+                try:
+                    if is_light(syll) and is_heavy(medial[i + 1]):
+                        stressed += '.' + syll
+                        n += 1
+                        continue
+
+                except IndexError:
+                    pass
+
+                # secondary stress
+                stressed += '.`' + syll
+
+    except IndexError:
+        pass
+
+    if len(syllables) > 1:
+        stressed += '.' + syllables[-1]
+
+    return stressed
 
 
 # Linguistic constraints ------------------------------------------------------

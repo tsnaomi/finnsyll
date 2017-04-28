@@ -27,30 +27,35 @@ class FinnSyll:
 
     def __init__(
         self,
-        split_compounds=True,
+        split=True,
         variation=True,
-        track_rules=False,
+        rules=False,
+        stress=False,
             ):
         self.DEV = bool(os.environ.get('FINNSYLL_DEV'))
         self._split = FinnSeg().segment  # instantiate compound segmenter
-        self.split_compounds = split_compounds
-        self.variation = variation
-        self.track_rules = track_rules
+        self.split_compounds = split
+        self.vary = variation
+        self.track_rules = rules
+        self.assign_stress = stress
 
         # if "split" is True, normalizing the syllabifier's input will include
         # attempting to split the input into constituent words
-        self.normalize = self.split if split_compounds else self._normalize
+        self.normalize = self.split if split else self._normalize  # TODO/CHECK
 
         # determine whether the syllabifier will produce variation and/or track
         # which rules have applied in a syllabification
-        if variation and track_rules:
+        if variation and rules:
             self._syllabify = self._syllabify_vary_track
         elif variation:
             self._syllabify = self._syllabify_vary
-        elif track_rules:
+        elif rules:
             self._syllabify = self._syllabify_track
         else:
             self._syllabify = self._syllabify_one
+
+        # determine whether the syllabifier will automatically assign stress
+        self.__syllabify = lambda word: syllabify(word, stress=stress)
 
     def __repr__(self):
         return '<FinnSyll: split_compounds=%s variation=%s track_rules=%s>' % (
@@ -81,20 +86,20 @@ class FinnSyll:
 
     def _syllabify_vary_track(self, word):
         # return all known variants and applied rules (as a list of tuples)
-        return list(syllabify(word))
+        return list(self.__syllabify(word))
 
     def _syllabify_vary(self, word):
         # return all known variants (as a list of strings), minus applied rules
-        return [s for s, _ in syllabify(word)]
+        return [s for s, _ in self.__syllabify(word)]
 
     def _syllabify_track(self, word):
         # return the most preferred variant and its applied rules (as a tuple)
-        for syll, rules in syllabify(word):
+        for syll, rules in self.__syllabify(word):
             return syll, rules
 
     def _syllabify_one(self, word):
         # return the most preferred variant (as a string), minus applied rules
-        for syll, _ in syllabify(word):
+        for syll, _ in self.__syllabify(word):
             return syll
 
     # split -------------------------------------------------------------------
