@@ -512,7 +512,7 @@ class TestSyllabifierOutput(unittest.TestCase):
 class TestAnotation(unittest.TestCase):
 
     def test_stress_assignment(self):
-        # ensure that...
+        # ensure that the syllabifier can assign stress to syllabifications
         F = FinnSyll(split=True, variation=True, rules=False, stress=True)
 
         cases = {
@@ -532,6 +532,46 @@ class TestAnotation(unittest.TestCase):
             }
 
         error_helper(self, F.syllabify, cases)
+
+    def test_annotate(self):
+        # ensure that the syllabifier can extract stress, weights, and vowel
+        # qualities in syllabifications
+        F1 = FinnSyll(split=True)
+        F2 = FinnSyll(split=False)
+
+        cases1 = {
+            'kellon': [
+                ('\'kel.lon', 'PU', 'HH', 'EO'),
+                ],
+            'ontuvaa': [
+                ('\'on.tu.vaa', 'PUU', 'HLH', 'OUA'),
+                ],
+            'naksutusta': [
+                ('\'nak.su.`tus.ta', 'PUSU', 'HLHL', 'AUUA'),
+                ],
+            'hovioikeus': [
+                ('\'ho.vi.\'oi.ke.us', 'PUPUU', 'LLHLH', 'OIOEU'),
+                ('\'ho.vi.\'oi.keus', 'PUPU', 'LLHH', 'OIOE'),
+                ],
+            'hovi oikeus': [
+                ('\'ho.vi \'oi.ke.us', 'PU PUU', 'LL HLH', 'OI OEU'),
+                ('\'ho.vi \'oi.keus', 'PU PU', 'LL HH', 'OI OE'),
+                ],
+            }
+
+        cases2 = {
+            'hovioikeus': [
+                ('\'ho.vi.`oi.ke.us', 'PUSUU', 'LLHLH', 'OIOEU'),
+                ('\'ho.vi.`oi.keus', 'PUSU', 'LLHH', 'OIOE'),
+                ],
+            'hovi oikeus': [
+                ('\'ho.vi \'oi.ke.us', 'PU PUU', 'LL HLH', 'OI OEU'),
+                ('\'ho.vi \'oi.keus', 'PU PU', 'LL HH', 'OI OE'),
+                ],
+            }
+
+        error_helper(self, F1.annotate, cases1)
+        error_helper(self, F2.annotate, cases2)
 
 
 class TestVariantOrdering(unittest.TestCase):  # TODO: TEST WITH STRESS

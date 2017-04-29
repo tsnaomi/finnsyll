@@ -16,10 +16,11 @@ except ImportError:
 import math
 import morfessor
 import os
+import re
 
 from os.path import dirname, join
-from .phonology import CONSTRAINTS
-from .utilities import nonalpha_split
+from .phonology import CONSTRAINTS, get_weight, get_vowel
+from .utilities import FLAGS, nonalpha_split
 from .v13 import syllabify
 
 
@@ -54,9 +55,6 @@ class FinnSyll:
         else:
             self._syllabify = self._syllabify_one
 
-        # determine whether the syllabifier will automatically assign stress
-        self.__syllabify = lambda word: syllabify(word, stress=stress)
-
     def __repr__(self):
         return '<FinnSyll: split_compounds=%s variation=%s track_rules=%s>' % (
             str(self.split_compounds),
@@ -86,20 +84,20 @@ class FinnSyll:
 
     def _syllabify_vary_track(self, word):
         # return all known variants and applied rules (as a list of tuples)
-        return list(self.__syllabify(word))
+        return list(syllabify(word, stress=self.assign_stress))
 
     def _syllabify_vary(self, word):
         # return all known variants (as a list of strings), minus applied rules
-        return [s for s, _ in self.__syllabify(word)]
+        return [s for s, _ in syllabify(word, stress=self.assign_stress)]
 
     def _syllabify_track(self, word):
         # return the most preferred variant and its applied rules (as a tuple)
-        for syll, rules in self.__syllabify(word):
+        for syll, rules in syllabify(word, stress=self.assign_stress):
             return syll, rules
 
     def _syllabify_one(self, word):
         # return the most preferred variant (as a string), minus applied rules
-        for syll, _ in self.__syllabify(word):
+        for syll, _ in syllabify(word, stress=self.assign_stress):
             return syll
 
     # split -------------------------------------------------------------------
@@ -111,6 +109,52 @@ class FinnSyll:
     def is_complex(self, word):
         '''Return True if 'word' is composed of multiple words; else, False.'''
         return not self.split(word).isalpha()
+
+    # annotation --------------------------------------------------------------
+
+    def annotate(self, word):
+        '''Annotate 'word' for syllabification, stress, weights, and vowels.'''
+        if re.search(r'[^a-zäö_ \-]+', word, flags=FLAGS):
+            raise ValueError("Can't annotate nonalphabetic input.")
+
+        # e.g., [ ('\'nak.su.`tus.ta', 'PUSU', 'HLHL', 'AUUA'), ]
+        info = []
+
+        for syllabification, _ in syllabify(self.normalize(word), stress=True):
+            stresses = ''
+            weights = ''
+            vowels = ''
+            tail = ''
+
+            for syll in filter(
+                None,
+                re.split(r'( |-|_)|\.', syllabification, flags=FLAGS),
+                    ):
+
+                try:
+                    vowels += get_vowel(syll)
+                    weights += get_weight(syll)
+                    stresses += 'P' if syll.startswith('\'') else 'S' \
+                        if syll.startswith('`') else 'U'
+
+                except AttributeError:
+
+                    if syll in ' _-':
+                        stresses += ' '
+                        weights += ' '
+                        vowels += ' '
+
+                    else:
+                        tail = '*'
+
+            info.append((
+                syllabification,
+                stresses + tail,
+                weights + tail,
+                vowels + tail,
+                ))
+
+        return info
 
 
 class FinnSeg(object):

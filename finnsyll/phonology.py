@@ -85,18 +85,28 @@ def is_sonorant(ch):
 
 # Annotation functions --------------------------------------------------------
 
+def get_vowel(syll):
+    '''Return the firstmost vowel in 'syll'.'''
+    return re.search(r'([ieaouäöy]{1})', syll, flags=FLAGS).group(1).upper()
+
+
+def get_weight(syll):
+    '''Return the weight of 'syll'.'''
+    return 'L' if is_light(syll) else 'H'
+
+
 def is_light(syll):
-    ''' '''
+    '''Return True if 'syll' is light.'''
     return re.match(r'(^|[^ieaouäöy]+)[ieaouäöy]{1}$', syll, flags=FLAGS)
 
 
 def is_heavy(syll):
-    ''' '''
+    '''Return True if 'syll' is heavy.'''
     return not is_light(syll)
 
 
 def stress(syllabified_simplex_word):
-    ''' '''
+    '''Assign primary and secondary stress to 'syllabified_simplex_word'.'''
     syllables = syllabified_simplex_word.split('.')
     stressed = '\'' + syllables[0]  # primary stress
 
