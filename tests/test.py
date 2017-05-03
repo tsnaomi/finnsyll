@@ -10,6 +10,7 @@ except ImportError:
 
 import unittest
 import finnsyll.phonology as phon
+import finnsyll.utilities as utilities
 
 from finnsyll import FinnSyll
 
@@ -22,6 +23,8 @@ def error_helper(self, func, cases):
         test = func(i)
 
         try:
+            # print '\n', (test)
+            # print(expected)
             self.assertEqual(test, expected)
 
         except AssertionError as exception:
@@ -774,3 +777,59 @@ class TestConstraints(unittest.TestCase):
         cases = {k.upper(): v for k, v in cases.items()}
 
         error_helper(self, phon.harmonic, cases)
+
+
+class TestUtilities(unittest.TestCase):
+
+    def test_nonalpha_split(self):
+        # ensure that utitilies.nonalpha_split() splits strings along any
+        # punctuation or whitespace
+        lines = (
+            'Nuo äänet on kuorona~rinnassas.\n'
+            'ja villi.on leimaus katseessas.--\n'
+            'peru päiviltä/muinaisilta se lie\n'
+            'kun käytiin katkera kostontie.\n\n'
+            'muutostöitä'
+            )
+
+        expected = [
+            'Nuo', ' ', 'äänet', ' ', 'on', ' ', 'kuorona', '~', 'rinnassas',
+            '.\n', 'ja', ' ', 'villi', '.', 'on', ' ', 'leimaus', ' ',
+            'katseessas', '.--\n', 'peru', ' ', 'päiviltä', '/',
+            'muinaisilta', ' ', 'se', ' ', 'lie', '\n', 'kun', ' ', 'käytiin',
+            ' ', 'katkera', ' ', 'kostontie', '.\n\n', 'muutostöitä',
+            ]
+
+        self.assertEqual(utilities.nonalpha_split(lines), expected)
+
+    def test_syllable_split(self):
+        # ensure that utitilies.syllable_split() splits strings into syllables
+        # and punctuation/whitespace
+        lines = (
+            'Nuo ää.net on kuo.ro.na~rin.näs.säs.\n'
+            'ja vil.li on/lei.ma.us kat.sees.sas.--\n'
+            'räin'
+            )
+
+        expected = [
+            'Nuo', ' ', 'ää', 'net', ' ', 'on', ' ', 'kuo', 'ro', 'na', '~',
+            'rin', 'näs', 'säs', '\n', 'ja', ' ', 'vil', 'li', ' ', 'on', '/',
+            'lei', 'ma', 'us', ' ', 'kat', 'sees', 'sas', '--\n', 'räin',
+            ]
+
+        self.assertEqual(utilities.syllable_split(lines), expected)
+
+    def test_extract_words(self):
+        # ensure that utitilies.extract_words() extracts any alphabetic
+        # syllabified string
+        lines = (
+            '.Nuo ää.net on kuo.ro.na~rin.näs.säs.\n'
+            'ja vil.li on/lei.ma.us kat.sees.sas.--\n'
+            )
+
+        expected = [
+            'Nuo', 'ää.net', 'on', 'kuo.ro.na', 'rin.näs.säs',
+            'ja', 'vil.li', 'on', 'lei.ma.us', 'kat.sees.sas',
+            ]
+
+        self.assertEqual(utilities.extract_words(lines), expected)
