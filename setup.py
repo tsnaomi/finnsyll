@@ -12,7 +12,7 @@ def read(filename):
 
 setup(
     name='FinnSyll',
-    version='1.0.3',
+    version='2.0.0',
     description='Finnish syllabifier and compound segmenter',
     long_description=read('README.rst'),
     url='https://github.com/tsnaomi/finnsyll',
@@ -20,7 +20,7 @@ setup(
     author_email='coder@tsnaomi.net',
     license='BSD',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering',
         'License :: OSI Approved :: BSD License',
