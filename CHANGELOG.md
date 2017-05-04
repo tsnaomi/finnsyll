@@ -8,7 +8,7 @@ This change log is based on [Keep a Changelog](http://keepachangelog.com/) and t
 - Add rule tracking with corresponding documentation.
 - Elaborate on syllabifier input/output in documentation.
 
-#### Change
+#### Fix
 - Update README.
 
 ## [2.0.0](#2.0.0) - 2017-5-4
