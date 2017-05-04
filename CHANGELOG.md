@@ -8,6 +8,9 @@ This change log is based on [Keep a Changelog](http://keepachangelog.com/) and t
 - Add rule tracking with corresponding documentation.
 - Elaborate on syllabifier input/output in documentation.
 
+#### Change
+- Update README.
+
 ## [2.0.0](#2.0.0) - 2017-5-4
 #### Add
 - Enable the syllabification of entire sentences/texts, treating any whitespace, punctuation, and non-alphabetic characters as word delimiters.
