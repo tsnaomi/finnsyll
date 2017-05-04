@@ -20,7 +20,7 @@ import re
 
 from os.path import dirname, join
 from .phonology import CONSTRAINTS, get_weight, get_vowel
-from .utilities import FLAGS, nonalpha_split
+from .utilities import FLAGS, nonalpha_split, syllable_split
 from .v13 import syllabify
 
 
@@ -114,11 +114,7 @@ class FinnSyll:
 
     def annotate(self, word):
         '''Annotate 'word' for syllabification, stress, weights, and vowels.'''
-        if re.search(r'[^a-zäö_ \-]+', word, flags=FLAGS):
-            raise ValueError("Can't annotate nonalphabetic input.")
-
-        # e.g., [ ('\'nak.su.`tus.ta', 'PUSU', 'HLHL', 'AUUA'), ]
-        info = []
+        info = []  # e.g., [ ('\'nak.su.`tus.ta', 'PUSU', 'HLHL', 'AUUA'), ]
 
         for syllabification, _ in syllabify(self.normalize(word), stress=True):
             stresses = ''
@@ -126,26 +122,23 @@ class FinnSyll:
             vowels = ''
             tail = ''
 
-            for syll in filter(
-                None,
-                re.split(r'( |-|_)|\.', syllabification, flags=FLAGS),
-                    ):
+            for syll in syllable_split(syllabification):
 
                 try:
                     vowels += get_vowel(syll)
                     weights += get_weight(syll)
-                    stresses += 'P' if syll.startswith('\'') else 'S' \
-                        if syll.startswith('`') else 'U'
+                    stresses += {'\'': 'P', '`': 'S'}.get(syll[0], 'U')
 
                 except AttributeError:
 
-                    if syll in ' _-':
+                    # if the syllable is vowel-less...
+                    if syll[-1].isalpha():
+                        tail = '*'
+
+                    else:
                         stresses += ' '
                         weights += ' '
                         vowels += ' '
-
-                    else:
-                        tail = '*'
 
             info.append((
                 syllabification,

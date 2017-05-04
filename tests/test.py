@@ -1,5 +1,4 @@
 # coding=utf-8
-
 # python -m unittest discover
 
 try:
@@ -560,6 +559,9 @@ class TestAnotation(unittest.TestCase):
                 ('\'ho.vi \'oi.ke.us', 'PU PUU', 'LL HLH', 'OI OEU'),
                 ('\'ho.vi \'oi.keus', 'PU PU', 'LL HH', 'OI OE'),
                 ],
+            'liu\'uttaa': [
+                ('\'liu\'\'ut.taa', 'P PU', 'H HH', 'I UA'),
+                ],
             }
 
         cases2 = {
@@ -803,18 +805,20 @@ class TestUtilities(unittest.TestCase):
         self.assertEqual(utilities.nonalpha_split(lines), expected)
 
     def test_syllable_split(self):
-        # ensure that utitilies.syllable_split() splits strings into syllables
-        # and punctuation/whitespace
+        # ensure that utitilies.syllable_split() splits strings into (stressed)
+        # syllables and punctuation/whitespace
         lines = (
             'Nuo ää.net on kuo.ro.na~rin.näs.säs.\n'
             'ja vil.li on/lei.ma.us kat.sees.sas.--\n'
-            'räin'
+            'räin \'ju.ko.`lan.tu.`pi.en \'liu\'\'ut.taa'
             )
 
         expected = [
             'Nuo', ' ', 'ää', 'net', ' ', 'on', ' ', 'kuo', 'ro', 'na', '~',
             'rin', 'näs', 'säs', '\n', 'ja', ' ', 'vil', 'li', ' ', 'on', '/',
-            'lei', 'ma', 'us', ' ', 'kat', 'sees', 'sas', '--\n', 'räin',
+            'lei', 'ma', 'us', ' ', 'kat', 'sees', 'sas', '--\n', 'räin', ' ',
+            '\'ju', 'ko', '`lan', 'tu', '`pi', 'en', ' ', '\'liu', '\'',
+            '\'ut', 'taa'
             ]
 
         self.assertEqual(utilities.syllable_split(lines), expected)
