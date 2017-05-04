@@ -16,11 +16,10 @@ except ImportError:
 import math
 import morfessor
 import os
-import re
 
 from os.path import dirname, join
 from .phonology import CONSTRAINTS, get_weight, get_vowel
-from .utilities import FLAGS, nonalpha_split, syllable_split
+from .utilities import nonalpha_split, syllable_split
 from .v13 import syllabify
 
 
