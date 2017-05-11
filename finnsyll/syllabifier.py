@@ -119,7 +119,6 @@ class FinnSyll:
             stresses = ''
             weights = ''
             vowels = ''
-            tail = ''
 
             for syll in syllable_split(syllabification):
 
@@ -132,7 +131,9 @@ class FinnSyll:
 
                     # if the syllable is vowel-less...
                     if syll[-1].isalpha():
-                        tail = '*'
+                        stresses += '*'
+                        weights += '*'
+                        vowels += '*'
 
                     else:
                         stresses += ' '
@@ -141,9 +142,9 @@ class FinnSyll:
 
             info.append((
                 syllabification,
-                stresses + tail,
-                weights + tail,
-                vowels + tail,
+                stresses,
+                weights,
+                vowels,
                 ))
 
         return info

@@ -573,6 +573,9 @@ class TestAnotation(unittest.TestCase):
                 ('\'ho.vi \'oi.ke.us', 'PU PUU', 'LL HLH', 'OI OEU'),
                 ('\'ho.vi \'oi.keus', 'PU PU', 'LL HH', 'OI OE'),
                 ],
+            'hovi ks': [
+                ('\'ho.vi \'ks', 'PU *', 'LL *', 'OI *'),
+                ]
             }
 
         error_helper(self, F1.annotate, cases1)
